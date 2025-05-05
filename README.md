@@ -19,7 +19,7 @@ _MinIO is a High Performance Object Storage released under GNU Affero General Pu
 
 
 ## Sponsoring ❤️
-If you like this add-on and would like to support my work, you can buy me a coffee. ☕
+If you like this add-on and would like to support my work and future projects, you can buy me a coffee. ☕
 
 Sponsoring available on Paypal (https://paypal.me/martemme).
 
