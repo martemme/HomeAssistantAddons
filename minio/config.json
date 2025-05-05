@@ -1,10 +1,11 @@
 {
   "name": "MinIO S3 Server",
-  "version": "1.0.63",
+  "version": "1.0.64",
   "slug": "minio",
   "description": "MinIO Server S3-compatible object storage server",
   "arch": [
-    "amd64"
+    "amd64",
+    "aarch64"
   ],
   "startup": "services",
   "boot": "auto",
@@ -37,7 +38,7 @@
     "bucket": "str"
   },
   "build_from": {
-    "amd64": "debian:stable-slim",
-    "aarch64": "debian:stable-slim"
+    "amd64": "alpine:3.18",
+    "aarch64": "alpine:3.18"
   }
 }

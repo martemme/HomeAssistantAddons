@@ -1,6 +1,7 @@
 # Home Assistant Add-on: MinIO
 
 ![Supports amd64 Architecture][amd64-shield]
+![Supports aarch64 Architecture][aarch64-shield]
 
 This add-on provides an **S3-compatible** server based on MinIO, perfect for:
 
