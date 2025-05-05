@@ -1,6 +1,6 @@
 {
   "name": "MinIO S3 Server",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "slug": "minio",
   "description": "MinIO Server S3-compatible object storage server",
   "arch": [

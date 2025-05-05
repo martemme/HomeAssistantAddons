@@ -40,7 +40,7 @@ Once installed, access MinIO via the sidebar or at:
 ## 📂 Repository Structure
 
 ```bash
-minio-addon/
+minio/
 ├── config.json         # Add-on definition
 ├── Dockerfile          # MinIO container
 ├── run.sh              # Entry point with TLS support and auto-creation of buckets

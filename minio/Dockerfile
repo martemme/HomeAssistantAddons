@@ -1,7 +1,7 @@
 FROM minio/minio:latest
 
 LABEL \
-    io.hass.version="1.0.1" \
+    io.hass.version="1.0.2" \
     io.hass.type="addon" \
     io.hass.arch="aarch64|amd64" \
     io.hass.name="MinIO" \
