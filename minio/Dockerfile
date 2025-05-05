@@ -7,9 +7,6 @@ LABEL \
     io.hass.name="MinIO" \
     io.hass.description="MinIO is an object storage server compatible with Amazon S3."
 
-# Install jq
-RUN microdnf install jq -y && microdnf clean all
-
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
