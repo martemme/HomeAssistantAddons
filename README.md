@@ -10,7 +10,6 @@ If you want to do add the repository manually, please follow the procedure highl
 
 ### [MinIO](./minio)
 
-![Supports aarch64 Architecture][aarch64-shield]
 ![Supports amd64 Architecture][amd64-shield]
 
 _MinIO is a High Performance Object Storage released under GNU Affero General Public License v3.0. It is API compatible with Amazon S3 cloud storage service._

@@ -1,6 +1,5 @@
 # Home Assistant Add-on: MinIO
 
-![Supports aarch64 Architecture][aarch64-shield]
 ![Supports amd64 Architecture][amd64-shield]
 
 This add-on provides an **S3-compatible** server based on MinIO, perfect for:
@@ -69,9 +68,20 @@ Consider enabling automatic TLS by placing certificates in `/ssl/`.
 - Healthcheck and Prometheus metrics
 - Interface for managing users/buckets via options
 
+## Changelog & Releases
+
+Releases are based on [Semantic Versioning][semver], and use the format
+of `MAJOR.MINOR.PATCH`. In a nutshell, the version will be incremented
+based on the following:
+
+- `MAJOR`: Incompatible or major changes.
+- `MINOR`: Backwards-compatible new features and enhancements.
+- `PATCH`: Backwards-compatible bugfixes and package updates.
+
 ---
 Made with ❤️ for automation and resilience.
 
+[semver]: http://semver.org/spec/v2.0.0.html
 [aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
 [armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg

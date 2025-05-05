@@ -1,4 +1,4 @@
-FROM ghcr.io/home-assistant/amd64-addon-base:latest
+FROM homeassistant/amd64-addon-base:latest
 
 LABEL io.hass.name="MinIO"
 LABEL io.hass.description="S3-compatible object storage for HA"

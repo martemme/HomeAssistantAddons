@@ -4,8 +4,7 @@
   "slug": "minio",
   "description": "MinIO Server S3-compatible object storage server",
   "arch": [
-    "amd64",
-    "aarch64"
+    "amd64"
   ],
   "startup": "services",
   "boot": "auto",
@@ -38,7 +37,6 @@
     "bucket": "str"
   },
   "build_from": {
-    "amd64": "homeassistant/amd64-addon-base:latest",
-    "aarch64": "homeassistant/aarch64-addon-base:latest"
+    "amd64": "homeassistant/amd64-addon-base:latest"
   }
 }
