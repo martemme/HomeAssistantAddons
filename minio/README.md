@@ -15,21 +15,19 @@ It is designed to be **production-ready**, secure, lightweight, and accessible d
 ```yaml
 access_key: admin
 secret_key: CHANGEME-strong-password
-region: us-east-1
-bucket: backup
 ```
+
+## 🚀 Installation
+
+1. Go to Home Assistant → **Supervisor → Add-on Store**
+2. Add this repository (Settings → Repositories → `https://github.com/martemme/HomeAssistantAddons`)
+3. Install the add-on, configure the credentials and start it
 
 ## 🌐 Access
 
 Once installed, access MinIO via the sidebar or at:
 
 `http://<ip_hass>:9000` (if Ingress is not available)
-
-## 🚀 Installation
-
-1. Go to Home Assistant → **Supervisor → Add-on Store**
-2. Add your custom Git repository (Settings → Repositories → `https://github.com/<your-username>/minio-addon`)
-3. Install the add-on, start it, and access MinIO via Ingress
 
 ## 🧾 Requirements
 
@@ -43,21 +41,14 @@ Once installed, access MinIO via the sidebar or at:
 minio/
 ├── config.json         # Add-on definition
 ├── Dockerfile          # MinIO container
-├── run.sh              # Entry point with TLS support and auto-creation of buckets
+├── run.sh              # Startup script
 ├── README.md
 └── ...
 ```
 
 ## 🧠 Notes
-The bucket specified in `bucket:` is automatically created if it does not exist.
-
-If you use Longhorn, you can point backups to:
-
-```bash
-http://<IP_HASS>:9000/longhorn-backup
-```
-
 The credentials are passed as environment variables during bootstrap.
+The container is based on `alpine:3.18` image
 
 ## 🛡 Security
 > ⚠️ Always use strong passwords.

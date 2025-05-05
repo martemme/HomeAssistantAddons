@@ -1,6 +1,6 @@
 {
   "name": "MinIO S3 Server",
-  "version": "1.0.64",
+  "version": "1.1.0",
   "slug": "minio",
   "description": "MinIO Server S3-compatible object storage server",
   "arch": [
@@ -14,9 +14,7 @@
   "host_network": true,
   "panel_icon": "mdi:database",
   "panel_title": "MinIO",
-  "ingress": true,
-  "ingress_port": 9001,
-  "ingress_stream": false,
+  "ingress": false,
   "ports": {
     "9000/tcp": 9000,
     "9001/tcp": 9001
@@ -27,15 +25,11 @@
   },
   "options": {
     "access_key": "admin",
-    "secret_key": "CHANGEME-strong-password",
-    "region": "us-east-1",
-    "bucket": "backup"
+    "secret_key": "CHANGEME-strong-password"
   },
   "schema": {
     "access_key": "str",
-    "secret_key": "str",
-    "region": "str",
-    "bucket": "str"
+    "secret_key": "str"
   },
   "build_from": {
     "amd64": "alpine:3.18",
