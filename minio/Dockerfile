@@ -4,7 +4,7 @@ LABEL io.hass.name="MinIO"
 LABEL io.hass.description="S3-compatible object storage for HA"
 LABEL io.hass.arch="amd64|aarch64"
 LABEL io.hass.type="addon"
-LABEL io.hass.version="1.0.61"
+LABEL io.hass.version="1.0.62"
 
 # Install curl and download MinIO binary
 # https://min.io/download#/linux
