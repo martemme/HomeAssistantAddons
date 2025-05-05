@@ -35,6 +35,5 @@
     "secret_key": "str",
     "region": "str",
     "bucket": "str"
-  },
-  "image": "docker.io/minio/minio:latest"
+  }
 }
