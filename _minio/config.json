@@ -2,7 +2,7 @@
   "name": "MinIO S3 Server",
   "version": "1.0.0",
   "slug": "minio",
-  "description": "Production-ready S3-compatible object storage server for HA and Longhorn",
+  "description": "MinIO Server S3-compatible object storage server",
   "arch": ["amd64", "aarch64"],
   "startup": "services",
   "boot": "auto",
