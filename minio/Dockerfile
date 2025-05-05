@@ -1,12 +1,22 @@
-FROM minio/minio:latest
+FROM ghcr.io/home-assistant/amd64-addon-base:latest
 
-LABEL \
-    io.hass.version="1.0.5" \
-    io.hass.type="addon" \
-    io.hass.arch="aarch64|amd64" \
-    io.hass.name="MinIO" \
-    io.hass.description="MinIO is an object storage server compatible with Amazon S3."
+LABEL io.hass.name="MinIO"
+LABEL io.hass.description="S3-compatible object storage for HA"
+LABEL io.hass.arch="amd64|aarch64"
+LABEL io.hass.type="addon"
+LABEL io.hass.version="1.0.6"
 
+# Install curl and download MinIO binary
+# https://min.io/download#/linux
+# https://docs.min.io/docs/minio-server-quickstart-guide.html
+RUN apk add --no-cache curl \
+ && curl -fsSL https://dl.min.io/server/minio/release/linux-amd64/minio \
+    -o /usr/local/bin/minio \
+ && chmod +x /usr/local/bin/minio \
+ && apk del curl
+
+# Copy the script into the container
+# make it executable and run it
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
