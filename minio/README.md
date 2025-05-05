@@ -1,70 +1,80 @@
-# MinIO Add-on per Home Assistant
+# Home Assistant Add-on: MinIO
 
-Questo add-on fornisce un server **S3 compatibile** basato su MinIO, perfetto per:
+![Supports aarch64 Architecture][aarch64-shield]
+![Supports amd64 Architecture][amd64-shield]
 
-- Backup di **Longhorn**
-- Archiviazione file/media
-- Logging o integrazioni custom
+This add-on provides an **S3-compatible** server based on MinIO, perfect for:
 
-È stato progettato per essere **production-ready**, sicuro, leggero e accessibile direttamente via pannello laterale di Home Assistant.
+- File/media storage
+- Logging or custom integrations
 
-## ⚙️ Configurazione
+It is designed to be **production-ready**, secure, lightweight, and accessible directly via the Home Assistant sidebar.
+
+## ⚙️ Configuration
 
 ```yaml
 access_key: admin
 secret_key: CHANGEME-strong-password
 region: us-east-1
-bucket: longhorn-backup
+bucket: backup
 ```
 
-## 🌐 Accesso
+## 🌐 Access
 
-Una volta installato, accedi a MinIO tramite il pannello laterale o all'indirizzo:
+Once installed, access MinIO via the sidebar or at:
 
-`http://<ip_hass>:9000` (se Ingress non è disponibile)
+`http://<ip_hass>:9000` (if Ingress is not available)
 
-## 🚀 Installazione
+## 🚀 Installation
 
-1. Vai su Home Assistant → **Supervisor → Add-on Store**
-2. Aggiungi la tua repo Git custom (Settings → Repositories → `https://github.com/<tuo-utente>/minio-addon`)
-3. Installa l’add-on, avvia e accedi a MinIO via Ingress
+1. Go to Home Assistant → **Supervisor → Add-on Store**
+2. Add your custom Git repository (Settings → Repositories → `https://github.com/<your-username>/minio-addon`)
+3. Install the add-on, start it, and access MinIO via Ingress
 
-## 🧾 Requisiti
+## 🧾 Requirements
 
-- Home Assistant OS o Supervised
-- Architettura supportata: `amd64`, `aarch64`
-- Accesso a una cartella persistente per `/data`
+- Home Assistant OS or Supervised
+- Supported architecture: `amd64`, `aarch64`
+- Access to a persistent folder for `/data`
 
-## 📂 Struttura del repository
+## 📂 Repository Structure
 
 ```bash
 minio-addon/
-├── config.json         # Definizione dell’add-on
-├── Dockerfile          # Contenitore MinIO
-├── run.sh              # Entrypoint con supporto TLS e bucket auto-creation
+├── config.json         # Add-on definition
+├── Dockerfile          # MinIO container
+├── run.sh              # Entry point with TLS support and auto-creation of buckets
 ├── README.md
 └── ...
 ```
 
-## 🧠 Note
-Il bucket specificato in bucket: viene creato automaticamente se non esiste
+## 🧠 Notes
+The bucket specified in `bucket:` is automatically created if it does not exist.
 
-Se usi Longhorn, puoi puntare i backup a:
+If you use Longhorn, you can point backups to:
 
 ```bash
 http://<IP_HASS>:9000/longhorn-backup
 ```
-Le credenziali vengono passate come variabili d'ambiente in fase di bootstrap
 
-## 🛡 Sicurezza
-> ⚠️ Usa sempre password forti.
+The credentials are passed as environment variables during bootstrap.
 
-Considera l’attivazione del TLS automatico posizionando i certificati in `/ssl/`.
+## 🛡 Security
+> ⚠️ Always use strong passwords.
 
-## ✅ TODO futuri
-- Supporto per versioning bucket
-- Healthcheck e metriche Prometheus
-- Interfaccia per gestione utenti/bucket via opzioni
+Consider enabling automatic TLS by placing certificates in `/ssl/`.
+
+## ✅ Future TODOs
+- Support for bucket versioning
+- Healthcheck and Prometheus metrics
+- Interface for managing users/buckets via options
 
 ---
-Realizzato con ❤️ per l’automazione e la resilienza.
+Made with ❤️ for automation and resilience.
+
+[aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
+[amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
+[armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
+[i386-shield]: https://img.shields.io/badge/i386-yes-green.svg
+[repository-badge]: https://img.shields.io/badge/Add%20repository%20to%20my-Home%20Assistant-41BDF5?logo=home-assistant&style=for-the-badge
+[repository-url]: https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmartemme%2FHomeAssistantAddons
