@@ -1,6 +1,6 @@
 {
   "name": "MinIO S3 Server",
-  "version": "1.0.6",
+  "version": "1.0.61",
   "slug": "minio",
   "description": "MinIO Server S3-compatible object storage server",
   "arch": [
@@ -36,5 +36,9 @@
     "secret_key": "str",
     "region": "str",
     "bucket": "str"
+  },
+  "build_from": {
+    "amd64": "homeassistant/amd64-addon-base:latest",
+    "aarch64": "homeassistant/aarch64-addon-base:latest"
   }
 }
