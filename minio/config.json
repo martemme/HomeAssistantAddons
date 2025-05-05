@@ -1,6 +1,6 @@
 {
   "name": "MinIO S3 Server",
-  "version": "1.0.62",
+  "version": "1.0.63",
   "slug": "minio",
   "description": "MinIO Server S3-compatible object storage server",
   "arch": [
@@ -37,6 +37,7 @@
     "bucket": "str"
   },
   "build_from": {
-    "amd64": "homeassistant/amd64-addon-base:latest"
+    "amd64": "debian:stable-slim",
+    "aarch64": "debian:stable-slim"
   }
 }
