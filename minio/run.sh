@@ -8,8 +8,10 @@ CONFIG="/data/options.json"
 # The file is created by the Home Assistant Add-on system
 # and contains the configuration options defined in the add-on config.json file
 # The jq command is used to parse the JSON file and extract the values
+# the drive variable is used to specify the location of the MinIO data directory inside /data
 ACCESS_KEY=$(jq -r .access_key  "$CONFIG")
 SECRET_KEY=$(jq -r .secret_key  "$CONFIG")
+DRIVE=$(jq -r .drive  "$CONFIG")
 
 # Configure MinIO environment variables
 # These variables are used to set up the MinIO server
@@ -18,6 +20,7 @@ export MINIO_ROOT_USER="$ACCESS_KEY"
 export MINIO_ROOT_PASSWORD="$SECRET_KEY"
 
 # Check if the bucket exists, if not create it
+DATA_DIR="/data/$DRIVE"
 mkdir -p /data
 
 echo "[INFO] Starting MinIO (user: $MINIO_ROOT_USER)"

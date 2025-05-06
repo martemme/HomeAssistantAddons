@@ -15,7 +15,16 @@ It is designed to be **production-ready**, secure, lightweight, and accessible d
 ```yaml
 access_key: admin
 secret_key: CHANGEME-strong-password
+drive: storage
 ```
+
+### Parameters
+
+| Variable        | Default     | Description                                           |
+|-----------------|-------------|-------------------------------------------------------|
+| `access_key`    | `admin`     | MinIO user credential                                 |
+| `secret_key`    | `admin`     | MinIO password credential                             |
+| `drive`         | `storage`   | Folder where MinIO data will be saved inside `/data`  |
 
 ## 🚀 Installation
 
@@ -54,11 +63,6 @@ The container is based on `alpine:3.18` image
 > ⚠️ Always use strong passwords.
 
 Consider enabling automatic TLS by placing certificates in `/ssl/`.
-
-## ✅ Future TODOs
-- Support for bucket versioning
-- Healthcheck and Prometheus metrics
-- Interface for managing users/buckets via options
 
 ## Changelog & Releases
 

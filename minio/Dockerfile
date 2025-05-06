@@ -1,10 +1,10 @@
 FROM alpine:3.18
 
 LABEL io.hass.name="MinIO"
-LABEL io.hass.description="S3-compatible object storage for HA"
+LABEL io.hass.description="MinIO is a High Performance Object Storage, API compatible with Amazon S3 cloud storage service."
 LABEL io.hass.arch="amd64|aarch64"
 LABEL io.hass.type="addon"
-LABEL io.hass.version="1.1.0"
+LABEL io.hass.version="1.1.1"
 
 # Install curl, jq and ca-certificates
 RUN apk add --no-cache bash curl jq ca-certificates

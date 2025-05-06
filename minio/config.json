@@ -1,6 +1,6 @@
 {
-  "name": "MinIO S3 Server",
-  "version": "1.1.0",
+  "name": "MinIO",
+  "version": "1.1.1",
   "slug": "minio",
   "description": "MinIO Server S3-compatible object storage server",
   "arch": [
@@ -8,6 +8,7 @@
     "aarch64"
   ],
   "startup": "services",
+  "url": "https://github.com/martemme/HomeAssistantAddons/tree/main/minio",
   "boot": "auto",
   "hassio_api": false,
   "init": false,
@@ -19,17 +20,25 @@
     "9000/tcp": 9000,
     "9001/tcp": 9001
   },
+  "ports_description": {
+    "9000/tcp": "Web Interface",
+    "9001/tcp": "Web Console"
+  },
+  "webui": "[PROTO:ssl]://[HOST]:[PORT:9000]",
   "map": {
     "config": "rw",
+    "share": "rw",
     "ssl": "rw"
   },
   "options": {
     "access_key": "admin",
-    "secret_key": "CHANGEME-strong-password"
+    "secret_key": "CHANGEME-strong-password",
+    "drive": "storage"
   },
   "schema": {
     "access_key": "str",
-    "secret_key": "str"
+    "secret_key": "str",
+    "drive": "str"
   },
   "build_from": {
     "amd64": "alpine:3.18",
