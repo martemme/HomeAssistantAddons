@@ -36,7 +36,7 @@ drive: storage
 
 Once installed, access MinIO via the sidebar or at:
 
-`http://<ip_hass>:9000` (if Ingress is not available)
+`http://<ip_hass>:9001` (if Ingress is not available)
 
 ## 🧾 Requirements
 

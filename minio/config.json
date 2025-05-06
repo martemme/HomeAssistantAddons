@@ -21,10 +21,10 @@
     "9001/tcp": 9001
   },
   "ports_description": {
-    "9000/tcp": "Web Interface",
-    "9001/tcp": "Web Console"
+    "9001/tcp": "Web Interface",
+    "9000/tcp": "Web Console"
   },
-  "webui": "[PROTO:ssl]://[HOST]:[PORT:9000]",
+  "webui": "[PROTO:ssl]://[HOST]:[PORT:9001]",
   "map": {
     "config": "rw",
     "share": "rw",

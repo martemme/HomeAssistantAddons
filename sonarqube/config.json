@@ -1,0 +1,49 @@
+{
+    "name": "SonarQube",
+    "version": "0.0.1-beta",
+    "slug": "sonarqube",
+    "description": "SonarQube Server helps you comply with common code security standards, such as the NIST SSDF, OWASP, CWE, STIG, and CASA.",
+    "arch": ["amd64", "armv7", "aarch64"],
+    "startup": "services",
+    "boot": "auto",
+    "host_network": false,
+    "privileged": true,
+    "options": {
+      "data_path": "/share/sonarqube/data",
+      "extensions_path": "/share/sonarqube/extensions",
+      "ui_port": 9000,
+      "jdbc_url": "jdbc:postgresql://sonarqube_db:5432/sonar",
+      "jdbc_username": "",
+      "jdbc_password": "",
+      "TZ": "Europe/Rome"
+    },
+    "schema": {
+      "data_path": "string",
+      "extensions_path": "string",
+      "ui_port": "integer",
+      "jdbc_url": "string",
+      "jdbc_username": "string",
+      "jdbc_password": "string",
+      "TZ": "string"
+    },
+    "ports": {
+      "ui": "ui_port"
+    },
+    "ports_description": {
+      "ui": "Web Interface"
+    },
+    "map": ["config"],
+    "environment": [
+      "TZ",
+      "SONAR_JDBC_URL",
+      "SONAR_JDBC_USERNAME",
+      "SONAR_JDBC_PASSWORD"
+    ],
+    "image": "sonarqube:community",
+    "webui": "http://[HOST]:[PORT:ui]",
+    "build_from": {
+        "amd64": "alpine:3.18",
+        "aarch64": "alpine:3.18"
+    }
+  }
+  

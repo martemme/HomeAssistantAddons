@@ -17,6 +17,15 @@ _MinIO is a High Performance Object Storage released under GNU Affero General Pu
 
 [Official Repo](https://github.com/minio/minio)
 
+### [SonarQube](./sonarqube)
+
+![Supports amd64 Architecture][amd64-shield]
+![Supports aarch64 Architecture][aarch64-shield]
+
+_SonarQube Server helps you comply with common code security standards, such as the NIST SSDF, OWASP, CWE, STIG, and CASA._
+
+[Official Repo](https://github.com/SonarSource/sonarqube)
+
 
 ## Sponsoring ❤️
 If you like this add-on and would like to support my work and future projects, you can buy me a coffee. ☕
