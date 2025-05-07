@@ -1,6 +1,6 @@
 {
     "name": "SonarQube",
-    "version": "0.0.3-beta",
+    "version": "0.0.4-beta",
     "slug": "sonarqube",
     "description": "SonarQube Server helps you comply with common code security standards, such as the NIST SSDF, OWASP, CWE, STIG, and CASA.",
     "arch": ["amd64", "armv7", "aarch64"],

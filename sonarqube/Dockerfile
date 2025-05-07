@@ -5,7 +5,7 @@ LABEL io.hass.name="SonarQube"
 LABEL io.hass.description="SonarQube Server helps you comply with common code security standards, such as the NIST SSDF, OWASP, CWE, STIG, and CASA."
 LABEL io.hass.arch="amd64|aarch64"
 LABEL io.hass.type="addon"
-LABEL io.hass.version="0.0.3-beta"
+LABEL io.hass.version="0.0.4-beta"
 
 # Build parameters
 ARG SONARQUBE_VERSION=9.9.6.92038
@@ -13,9 +13,9 @@ ENV SONARQUBE_VERSION=${SONARQUBE_VERSION} \
     SONARQUBE_HOME=/opt/sonarqube \
     SONARQUBE_BIN=/opt/sonarqube/bin/linux-x86-64
 
-# Install runtime dependencies
+# Install runtime dependencies (Java 17)
 RUN apk add --no-cache \
-      openjdk11-jre \
+      openjdk17-jre \
       curl \
       unzip \
       su-exec \
@@ -39,5 +39,5 @@ RUN chmod +x /usr/local/bin/run.sh
 # Expose the internal port
 EXPOSE 9000
 
-# All setup (timezone, mkdir) runs as root; run.sh will drop to sonarqube
+# All setup runs as root; run.sh poi farà su-exec a sonarqube
 ENTRYPOINT ["/usr/local/bin/run.sh"]
