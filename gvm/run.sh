@@ -7,15 +7,34 @@ log() {
     echo "[GVM ADD-ON] $(date +"%Y-%m-%d %H:%M:%S") - $*"
 }
 
-# Ensure required env vars are set
-: "${USERNAME:?Environment variable USERNAME not set}"
-: "${PASSWORD:?Environment variable PASSWORD not set}"
+# Load user config passed by Home Assistant (as JSON env vars)
+CONFIG_PATH="/data/options.json"
 
-log "Starting GVM (OpenVAS) add-on..."
+if [ ! -f "$CONFIG_PATH" ]; then
+    log "ERROR: Config file not found at $CONFIG_PATH"
+    exit 1
+fi
+
+# Extract variables using jq
+USERNAME=$(jq -r '.username' "$CONFIG_PATH")
+PASSWORD=$(jq -r '.password' "$CONFIG_PATH")
+
+# Validate
+if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+    log "ERROR: username and/or password not set in options.json"
+    exit 1
+fi
+
+# Set them for the environment
+export USERNAME
+export PASSWORD
+export DB_PASSWORD="$PASSWORD"
+
+log "INFO: Starting GVM (OpenVAS) add-on as user $USERNAME..."
 
 # Setup timezone
 if [ -n "$TZ" ]; then
-    log "Setting timezone to $TZ"
+    log "INFO: Setting timezone to $TZ"
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime
     echo "$TZ" > /etc/timezone
 fi
@@ -23,9 +42,9 @@ fi
 # Initialize data directory
 DATA_DIR="/data"
 if [ ! -d "$DATA_DIR" ]; then
-    log "Creating data directory at $DATA_DIR"
+    log "INFO: Creating data directory at $DATA_DIR"
     mkdir -p "$DATA_DIR"
 fi
 
-log "Launching GVM service..."
+log "INFO: Launching GVM service..."
 exec /usr/local/bin/dumb-init gvm-start | tee -a "$DATA_DIR/gvm.log"

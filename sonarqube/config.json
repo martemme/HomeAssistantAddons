@@ -39,7 +39,6 @@
       "SONAR_JDBC_USERNAME": "jdbc_username",
       "SONAR_JDBC_PASSWORD": "jdbc_password"
     },
-    "image": "sonarqube",
     "webui": "http://[HOST]:[PORT:9000]",
     "build_from": {
         "amd64": "alpine:3.18",

@@ -10,12 +10,19 @@ LABEL io.hass.version="0.0.1-beta"
 # Set timezone
 ENV TZ=Europe/Rome
 
+# Install jq for parsing config
+RUN apt-get update && apt-get install -y jq \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Copy the entrypoint script
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
 # Expose default GVM Web UI port
 EXPOSE 9392
+
+# Optionally persist data
+VOLUME [ "/data" ]
 
 # Set entrypoint
 CMD [ "/run.sh" ]
