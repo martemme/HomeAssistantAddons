@@ -7,7 +7,7 @@ log() {
     echo "[GVM ADD-ON] $(date +"%Y-%m-%d %H:%M:%S") - $*"
 }
 
-# Load user config passed by Home Assistant (as JSON env vars)
+# Path to options provided by Home Assistant
 CONFIG_PATH="/data/options.json"
 
 if [ ! -f "$CONFIG_PATH" ]; then
@@ -15,9 +15,13 @@ if [ ! -f "$CONFIG_PATH" ]; then
     exit 1
 fi
 
-# Extract variables using jq
+# Read variables from options.json
 USERNAME=$(jq -r '.username' "$CONFIG_PATH")
 PASSWORD=$(jq -r '.password' "$CONFIG_PATH")
+TZ=$(jq -r '.TZ // empty' "$CONFIG_PATH")
+DB_PASSWORD=$(jq -r '.DB_PASSWORD // empty' "$CONFIG_PATH")
+HTTPS=$(jq -r '.HTTPS // "false"' "$CONFIG_PATH")
+SSHD=$(jq -r '.SSHD // "true"' "$CONFIG_PATH")
 
 # Validate
 if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
@@ -25,17 +29,20 @@ if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
     exit 1
 fi
 
-# Set them for the environment
+# Export variables for GVM
 export USERNAME
 export PASSWORD
-export DB_PASSWORD="$PASSWORD"
+export DB_PASSWORD
+export TZ
+export HTTPS
+export SSHD
 
-log "INFO: Starting GVM (OpenVAS) add-on as user $USERNAME..."
+log "INFO: Starting GVM (OpenVAS) add-on as user '$USERNAME'"
 
-# Setup timezone
+# Set timezone if available
 if [ -n "$TZ" ]; then
     log "INFO: Setting timezone to $TZ"
-    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime
+    ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
     echo "$TZ" > /etc/timezone
 fi
 
@@ -47,4 +54,4 @@ if [ ! -d "$DATA_DIR" ]; then
 fi
 
 log "INFO: Launching GVM service..."
-exec /usr/local/bin/dumb-init gvm-start | tee -a "$DATA_DIR/gvm.log"
+exec gvm-start | tee -a "$DATA_DIR/gvm.log"
