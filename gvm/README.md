@@ -48,7 +48,7 @@ gvm/
 
 ## 🛡 Security
 
-> ⚠️ Always use strong passwords and ensure secure network settings, especially for database connections.
+> ⚠️ Always use strong passwords and ensure secure network settings.
 
 ---
 
