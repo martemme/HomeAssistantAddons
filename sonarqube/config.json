@@ -1,13 +1,13 @@
 {
     "name": "SonarQube",
-    "version": "0.0.1-beta",
+    "version": "0.0.2-beta",
     "slug": "sonarqube",
     "description": "SonarQube Server helps you comply with common code security standards, such as the NIST SSDF, OWASP, CWE, STIG, and CASA.",
     "arch": ["amd64", "armv7", "aarch64"],
     "startup": "services",
     "boot": "auto",
     "host_network": false,
-    "privileged": true,
+    "full_access": true,
     "options": {
       "data_path": "/share/sonarqube/data",
       "extensions_path": "/share/sonarqube/extensions",
@@ -18,32 +18,31 @@
       "TZ": "Europe/Rome"
     },
     "schema": {
-      "data_path": "string",
-      "extensions_path": "string",
-      "ui_port": "integer",
-      "jdbc_url": "string",
-      "jdbc_username": "string",
-      "jdbc_password": "string",
-      "TZ": "string"
+      "data_path": "str",
+      "extensions_path": "str",
+      "ui_port": "int",
+      "jdbc_url": "str",
+      "jdbc_username": "str",
+      "jdbc_password": "str",
+      "TZ": "str"
     },
     "ports": {
-      "ui": "ui_port"
+        "9000/tcp": 9000
     },
     "ports_description": {
-      "ui": "Web Interface"
+        "9000/tcp": "Web Interface"
     },
     "map": ["config"],
-    "environment": [
-      "TZ",
-      "SONAR_JDBC_URL",
-      "SONAR_JDBC_USERNAME",
-      "SONAR_JDBC_PASSWORD"
-    ],
-    "image": "sonarqube:community",
-    "webui": "http://[HOST]:[PORT:ui]",
+    "environment": {
+      "TZ": "TZ",
+      "SONAR_JDBC_URL": "jdbc_url",
+      "SONAR_JDBC_USERNAME": "jdbc_username",
+      "SONAR_JDBC_PASSWORD": "jdbc_password"
+    },
+    "image": "sonarqube",
+    "webui": "http://[HOST]:[PORT:9000]",
     "build_from": {
         "amd64": "alpine:3.18",
         "aarch64": "alpine:3.18"
     }
   }
-  

@@ -5,7 +5,7 @@ LABEL io.hass.name="SonarQube"
 LABEL io.hass.description="SonarQube Server helps you comply with common code security standards, such as the NIST SSDF, OWASP, CWE, STIG, and CASA."
 LABEL io.hass.arch="amd64|aarch64"
 LABEL io.hass.type="addon"
-LABEL io.hass.version="0.0.1-beta"
+LABEL io.hass.version="0.0.2-beta"
 
 # Build parameters
 ARG SONARQUBE_VERSION=9.9.6.92038
