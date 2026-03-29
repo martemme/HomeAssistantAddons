@@ -2,10 +2,11 @@ name: NFS Server
 version: "1.0.0"
 slug: nfs_server
 description: Expose Home Assistant media folder via NFS.
-arch: [aarch64, amd64, armv7, i386, x86_64]
+arch: [aarch64, amd64, armv7]
 privileged: [SYS_ADMIN]
 apparmor: false
 host_network: true
+kernel_modules: true
 map:
   - media:rw
 ports: {}

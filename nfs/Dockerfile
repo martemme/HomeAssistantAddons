@@ -1,4 +1,4 @@
-FROM alpine:3.19
+FROM ghcr.io/hassio-addons/base:latest
 RUN apk add --no-cache nfs-utils
 COPY run.sh /
 RUN chmod +x /run.sh
