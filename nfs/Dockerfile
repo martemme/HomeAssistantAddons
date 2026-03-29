@@ -1,4 +1,5 @@
-FROM ghcr.io/hassio-addons/base:latest
+ARG BUILD_FROM
+FROM $BUILD_FROM
 RUN apk add --no-cache nfs-utils
 COPY run.sh /
 RUN chmod +x /run.sh
