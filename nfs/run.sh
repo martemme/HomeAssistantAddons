@@ -24,7 +24,13 @@ else
         fi
 
         bashio::log.info "Exporting ${MOUNT_PATH} to ${NETWORK} (${OPTIONS})..."
-        echo "${MOUNT_PATH} ${NETWORK}(${OPTIONS})" >> /etc/exports
+        EXPORT_LINE="${MOUNT_PATH}"
+        IFS=',' read -ra NETWORKS <<< "${NETWORK}"
+        for net in "${NETWORKS[@]}"; do
+            net=$(echo "${net}" | tr -d ' ')
+            EXPORT_LINE="${EXPORT_LINE} ${net}(${OPTIONS})"
+        done
+        echo "${EXPORT_LINE}" >> /etc/exports
     done
 fi
 
