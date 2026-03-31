@@ -18,7 +18,6 @@ else
         NETWORK=$(jq -r ".shares[${i}].allowed_network" "${CONFIG}")
         READ_ONLY=$(jq -r ".shares[${i}].read_only" "${CONFIG}")
         ROOT_SQUASH=$(jq -r ".shares[${i}].root_squash" "${CONFIG}")
-        SYNC=$(jq -r ".shares[${i}].sync" "${CONFIG}")
         MOUNT_PATH="/${FOLDER}"
 
         if [ "${READ_ONLY}" = "true" ]; then
@@ -31,10 +30,6 @@ else
             OPTIONS="${OPTIONS},root_squash"
         else
             OPTIONS="${OPTIONS},no_root_squash"
-        fi
-
-        if [ "${SYNC}" = "true" ]; then
-            OPTIONS="${OPTIONS},sync"
         fi
 
         OPTIONS="${OPTIONS},insecure"
@@ -53,4 +48,4 @@ cat /etc/exports
 
 # Start unfs3 user-space NFS server in foreground
 bashio::log.info "Starting unfs3 NFS server..."
-exec unfsd -d -s -e /etc/exports
+exec unfsd -d -e /etc/exports

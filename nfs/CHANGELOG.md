@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.14 - 2026-03-31
+
+- fix: remove unfsd -s flag (security risk: grants all clients root access, not file handle stability)
+- fix: remove sync export option (not supported by unfs3, silently ignored)
+
 ## 1.0.13 - 2026-03-31
 
 - feat: add per-share sync option (default true) to fix I/O errors on large file transfers
