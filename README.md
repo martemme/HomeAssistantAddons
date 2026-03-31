@@ -26,6 +26,14 @@ _SonarQube Server helps you comply with common code security standards, such as 
 
 [Official Repo](https://github.com/SonarSource/sonarqube)
 
+### [NFS Server](./nfs)
+
+![Supports amd64 Architecture][amd64-shield]
+![Supports aarch64 Architecture][aarch64-shield]
+![Supports armv7 Architecture][armv7-shield]
+
+_Expose Home Assistant folders (media, share, config, backup) via NFS to other devices on the network._
+
 ### [GVM](./gvm)
 
 ![Supports amd64 Architecture][amd64-shield]
