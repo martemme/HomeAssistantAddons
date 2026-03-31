@@ -15,12 +15,19 @@ else
         FOLDER=$(jq -r ".shares[${i}].folder" "${CONFIG}")
         NETWORK=$(jq -r ".shares[${i}].allowed_network" "${CONFIG}")
         READ_ONLY=$(jq -r ".shares[${i}].read_only" "${CONFIG}")
+        ROOT_SQUASH=$(jq -r ".shares[${i}].root_squash" "${CONFIG}")
         MOUNT_PATH="/${FOLDER}"
 
         if [ "${READ_ONLY}" = "true" ]; then
-            OPTIONS="ro,no_root_squash"
+            OPTIONS="ro"
         else
-            OPTIONS="rw,no_root_squash"
+            OPTIONS="rw"
+        fi
+
+        if [ "${ROOT_SQUASH}" = "true" ]; then
+            OPTIONS="${OPTIONS},root_squash"
+        else
+            OPTIONS="${OPTIONS},no_root_squash"
         fi
 
         bashio::log.info "Exporting ${MOUNT_PATH} to ${NETWORK} (${OPTIONS})..."
