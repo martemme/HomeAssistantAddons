@@ -31,7 +31,7 @@ else
         else
             OPTIONS="${OPTIONS},no_root_squash"
         fi
-        OPTIONS="${OPTIONS},sync,no_subtree_check,insecure"
+        OPTIONS="${OPTIONS},insecure"
 
         bashio::log.info "Exporting ${MOUNT_PATH} to ${NETWORK} (${OPTIONS})..."
         EXPORT_LINE="${MOUNT_PATH}"

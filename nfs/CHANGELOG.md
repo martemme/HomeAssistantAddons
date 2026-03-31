@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.11 - 2026-03-31
+
+- fix: remove sync/no_subtree_check (kernel NFS options, unsupported by unfs3, caused mkdir failure on Windows)
+
 ## 1.0.10 - 2026-03-31
 
 - fix: chmod 777 dynamically on each configured export folder before starting unfsd
