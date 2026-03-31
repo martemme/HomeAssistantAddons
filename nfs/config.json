@@ -1,6 +1,6 @@
 {
   "name": "NFS Server",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "slug": "nfs_server",
   "description": "Expose Home Assistant media folder via NFS.",
   "arch": [
@@ -16,15 +16,31 @@
     "SYS_ADMIN"
   ],
   "apparmor": false,
+  "hassio_api": true,
   "kernel_modules": true,
   "map": [
-    "media:rw"
+    "media:rw",
+    "share:rw",
+    "config:ro",
+    "backup:ro"
   ],
   "options": {
-    "allowed_network": "192.168.1.0/24"
+    "shares": [
+      {
+        "folder": "media",
+        "allowed_network": "192.168.1.0/24",
+        "read_only": false
+      }
+    ]
   },
   "schema": {
-    "allowed_network": "str"
+    "shares": [
+      {
+        "folder": "str",
+        "allowed_network": "str",
+        "read_only": "bool"
+      }
+    ]
   },
   "build_from": {
     "amd64": "ghcr.io/home-assistant/amd64-base:latest",
