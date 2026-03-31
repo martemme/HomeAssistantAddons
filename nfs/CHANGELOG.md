@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.9 - 2026-03-31
+
+- fix: permission options on nfs
+
 ## 1.0.5 - 2026-03-31
 
 - fix: switch to unfs3 user-space NFS server (kernel nfsd not available on HA OS)

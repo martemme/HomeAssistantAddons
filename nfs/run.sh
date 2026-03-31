@@ -13,6 +13,8 @@ if [ "${count}" -eq 0 ]; then
 else
     for i in $(seq 0 $((count - 1))); do
         FOLDER=$(jq -r ".shares[${i}].folder" "${CONFIG}")
+        bashio::log.info "Setting permissions on /${FOLDER}..."
+        chmod 777 "/${FOLDER}"
         NETWORK=$(jq -r ".shares[${i}].allowed_network" "${CONFIG}")
         READ_ONLY=$(jq -r ".shares[${i}].read_only" "${CONFIG}")
         ROOT_SQUASH=$(jq -r ".shares[${i}].root_squash" "${CONFIG}")
