@@ -1,6 +1,6 @@
 {
   "name": "NFS Server",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "slug": "nfs_server",
   "description": "Expose Home Assistant media folder via NFS.",
   "arch": [
@@ -13,10 +13,12 @@
   "init": false,
   "host_network": true,
   "privileged": [
-    "SYS_ADMIN"
+    "SYS_ADMIN",
+    "SYS_MODULE"
   ],
   "apparmor": false,
   "hassio_api": true,
+  "hassio_role": "default",
   "kernel_modules": true,
   "map": [
     "media:rw",
