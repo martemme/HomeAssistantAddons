@@ -29,6 +29,7 @@ else
         else
             OPTIONS="${OPTIONS},no_root_squash"
         fi
+        OPTIONS="${OPTIONS},sync,no_subtree_check,insecure"
 
         bashio::log.info "Exporting ${MOUNT_PATH} to ${NETWORK} (${OPTIONS})..."
         EXPORT_LINE="${MOUNT_PATH}"
@@ -40,7 +41,6 @@ else
         echo "${EXPORT_LINE}" >> /etc/exports
     done
 fi
-
 cat /etc/exports
 
 # Start unfs3 user-space NFS server in foreground
