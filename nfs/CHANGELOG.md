@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.10 - 2026-03-31
+
+- fix: chmod 777 dynamically on each configured export folder before starting unfsd
+
 ## 1.0.9 - 2026-03-31
 
 - fix: permission options on nfs
