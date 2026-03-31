@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.5 - 2026-03-31
+
+- fix: switch to unfs3 user-space NFS server (kernel nfsd not available on HA OS)
+- fix: remove unneeded SYS_ADMIN/SYS_MODULE/kernel_modules (not required with unfs3)
+
 ## 1.0.3 - 2026-03-31
 
 - feat: support multiple configurable NFS shares (folder, allowed_network, read_only)
