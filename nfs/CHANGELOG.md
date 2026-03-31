@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.13 - 2026-03-31
+
+- feat: add per-share sync option (default true) to fix I/O errors on large file transfers
+
 ## 1.0.12 - 2026-03-31
 
 - fix: add -s flag to unfsd for stable file handles, fixes EIO errors during rsync

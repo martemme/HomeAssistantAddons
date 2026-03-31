@@ -1,6 +1,6 @@
 {
   "name": "NFS Server",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "slug": "nfs_server",
   "description": "Expose Home Assistant media folder via NFS.",
   "arch": [
@@ -27,7 +27,8 @@
         "folder": "media",
         "allowed_network": "192.168.1.0/24",
         "read_only": false,
-        "root_squash": true
+        "root_squash": true,
+        "sync": true
       }
     ]
   },
@@ -37,7 +38,8 @@
         "folder": "str",
         "allowed_network": "str",
         "read_only": "bool",
-        "root_squash": "bool"
+        "root_squash": "bool",
+        "sync": "bool"
       }
     ]
   },
