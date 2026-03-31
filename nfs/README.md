@@ -27,6 +27,7 @@ shares:
 | `shares[].folder`           | `media`             | HA folder to export (`media`, `share`, `config`, `backup`)        |
 | `shares[].allowed_network`  | `192.168.1.0/24`    | Network(s) allowed to access the share. Comma-separated for multiple (e.g. `192.168.1.0/24, 10.0.0.0/8`) |
 | `shares[].read_only`        | `false`             | Whether the share is read-only                                     |
+| `shares[].sync`             | `true`              | Confirm each write before responding. Prevents I/O errors on large file transfers (e.g. rsync) |
 
 You can define multiple shares:
 
