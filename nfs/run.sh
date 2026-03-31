@@ -47,4 +47,4 @@ cat /etc/exports
 
 # Start unfs3 user-space NFS server in foreground
 bashio::log.info "Starting unfs3 NFS server..."
-exec unfsd -d -e /etc/exports
+exec unfsd -d -s -e /etc/exports

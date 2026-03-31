@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.12 - 2026-03-31
+
+- fix: add -s flag to unfsd for stable file handles, fixes EIO errors during rsync
+
 ## 1.0.11 - 2026-03-31
 
 - fix: remove sync/no_subtree_check (kernel NFS options, unsupported by unfs3, caused mkdir failure on Windows)
