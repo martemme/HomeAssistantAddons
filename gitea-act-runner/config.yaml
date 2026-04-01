@@ -1,0 +1,35 @@
+name: Gitea act_runner
+version: "1.0.0"
+slug: gitea_act_runner
+description: Run Gitea Actions jobs natively on your Home Assistant machine
+url: "https://github.com/martemme/HomeAssistantAddons/tree/main/gitea-act-runner"
+
+arch:
+  - amd64
+  - aarch64
+
+startup: services
+boot: auto
+init: false
+
+# full_access grants access to /var/run/docker.sock so act_runner can
+# spawn job containers on the host Docker daemon.
+full_access: true
+
+build_from:
+  amd64: "gitea/act_runner:latest"
+  aarch64: "gitea/act_runner:latest"
+
+options:
+  gitea_url: ""
+  runner_token: ""
+  runner_name: "haos-runner"
+  runner_labels: "ubuntu-latest:docker://catthehacker/ubuntu:act-22.04"
+  log_level: "info"
+
+schema:
+  gitea_url: str
+  runner_token: str
+  runner_name: str
+  runner_labels: str
+  log_level: "match(debug|info|warn|error)"
