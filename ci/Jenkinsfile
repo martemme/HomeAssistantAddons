@@ -77,28 +77,28 @@ pipeline {
      *  UPGRADE CONSIGLIATO → Generic Webhook Trigger (risposta immediata):
      *    1. Manage Jenkins → Plugin Manager → "Generic Webhook Trigger" → Install
      *    2. Sostituire il blocco triggers con:
-     *
-     *       triggers {
-     *           GenericTrigger(
-     *               genericVariables: [
-     *                   [key: 'GITEA_REF',    value: '$.ref'],
-     *                   [key: 'GITEA_BEFORE', value: '$.before'],
-     *                   [key: 'GITEA_AFTER',  value: '$.after'],
-     *               ],
-     *               causeString:               'Push Gitea su $GITEA_REF',
-     *               token:                     'homeassistant-addons',
-     *               printContributedVariables: true,
-     *               regexpFilterText:          '$GITEA_REF',
-     *               regexpFilterExpression:    'refs/heads/main'
-     *           )
-     *       }
-     *
+     */
+     triggers {
+         GenericTrigger(
+             genericVariables: [
+                 [key: 'GITEA_REF',    value: '$.ref'],
+                 [key: 'GITEA_BEFORE', value: '$.before'],
+                 [key: 'GITEA_AFTER',  value: '$.after'],
+             ],
+             causeString:               'Push Gitea su $GITEA_REF',
+             token:                     '1993dec12_ha-addons',
+             printContributedVariables: true,
+             regexpFilterText:          '$GITEA_REF',
+             regexpFilterExpression:    'refs/heads/main'
+         )
+     }
+     /*
      *    3. Creare webhook in Gitea → Settings → Webhooks:
-     *       URL: https://pipelines.mt-home.uk/generic-webhook-trigger/invoke?token=homeassistant-addons
-     * ----------------------------------------------------------------------- */
+     *       URL: https://pipelines.mt-home.uk/generic-webhook-trigger/invoke?token=1993dec12_ha-addons
     triggers {
         pollSCM('H/2 * * * *')
     }
+     * ----------------------------------------------------------------------- */
 
     environment {
         REGISTRY       = 'registry.mt-home.uk'
