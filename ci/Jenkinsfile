@@ -1,0 +1,573 @@
+@Library('shared-lib') _
+
+/* ============================================================================
+ *  HA ADD-ONS CI/CD PIPELINE
+ *  Repo  : HomeAssistantAddOns
+ *  File  : ci/Jenkinsfile
+ *  Autore: Martin
+ *
+ *  Descrizione
+ *  -----------
+ *  Pipeline che su ogni push su main rileva quali addon sono cambiati,
+ *  esegue lint, builda l'immagine Docker (amd64) e la pusha sul registry
+ *  privato. Al termine aggiorna repository.json con i metadati aggiornati
+ *  e committa il file con [skip ci] per evitare loop infiniti.
+ *
+ *  Flusso
+ *  ------
+ *  1. Checkout
+ *  2. Detect    — git diff → sotto-directory addon modificate
+ *  3. Lint      — hadolint + yaml/json validate + shellcheck (parallel)
+ *  4. Build     — docker build --platform linux/amd64 + push (parallel)
+ *  5. Publish   — aggiorna repository.json e committa su main
+ *  6. Summary   — tabella risultati + notifica ntfy
+ *
+ *  Trigger
+ *  -------
+ *  Generic Webhook Trigger su push → refs/heads/main
+ *  Token    : homeassistant-addons
+ *  Webhook  : https://pipelines.mt-home.uk/generic-webhook-trigger/invoke?token=homeassistant-addons
+ *
+ *  Credenziali Jenkins richieste
+ *  ------------------------------
+ *  gitea-credentials     Username/Password — token Gitea (checkout + push)
+ *  registry-credentials  Username/Password — Docker registry
+ *
+ * ============================================================================
+ */
+
+pipeline {
+
+    agent any
+
+    /* -------------------------------------------------------------------------
+     *  PARAMETRI
+     *  Valori infrastrutturali come parametri: portabilità garantita,
+     *  nessuna informazione sensibile nel Jenkinsfile.
+     * ----------------------------------------------------------------------- */
+    parameters {
+        string(
+            name:         'GITEA_USER',
+            defaultValue: 'martemme',
+            description:  'Username Gitea del repository HomeAssistantAddOns'
+        )
+        string(
+            name:         'NTFY_TOPIC',
+            defaultValue: 'jenkins-addons',
+            description:  'Topic ntfy per notifiche build (es: jenkins-addons)'
+        )
+        string(
+            name:         'NTFY_URL',
+            defaultValue: 'https://ntfy.mt-home.uk',
+            description:  'URL base ntfy — lasciare vuoto per disabilitare le notifiche'
+        )
+        booleanParam(
+            name:         'BUILD_ALL',
+            defaultValue: false,
+            description:  'Forza build di TUTTI gli addon (ignora il diff)'
+        )
+    }
+
+    /* -------------------------------------------------------------------------
+     *  TRIGGER
+     *  Il plugin Generic Webhook Trigger deve essere installato in Jenkins.
+     *  Se non presente: Manage Jenkins → Plugin Manager → cerca "Generic Webhook Trigger".
+     * ----------------------------------------------------------------------- */
+    triggers {
+        GenericTrigger(
+            genericVariables: [
+                [key: 'GITEA_REF',    value: '$.ref'],
+                [key: 'GITEA_BEFORE', value: '$.before'],
+                [key: 'GITEA_AFTER',  value: '$.after'],
+            ],
+            causeString:               'Push Gitea su $GITEA_REF',
+            token:                     'homeassistant-addons',
+            printContributedVariables: true,
+            regexpFilterText:          '$GITEA_REF',
+            regexpFilterExpression:    'refs/heads/main'
+        )
+    }
+
+    environment {
+        REGISTRY       = 'registry.mt-home.uk'
+        GITEA_BASE_URL = 'https://git.mt-home.uk'
+        REGISTRY_CREDS = credentials('registry-credentials')
+        GITEA_CREDS    = credentials('gitea-credentials')
+    }
+
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+        timeout(time: 60, unit: 'MINUTES')
+        ansiColor('xterm')
+    }
+
+    // =========================================================================
+    stages {
+
+        /* ---------------------------------------------------------------------
+         *  STAGE 1 — Checkout
+         * ------------------------------------------------------------------- */
+        stage('Checkout') {
+            steps {
+                checkout([
+                    $class:  'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url:           "${env.GITEA_BASE_URL}/${params.GITEA_USER}/HomeAssistantAddOns.git",
+                        credentialsId: 'gitea-credentials'
+                    ]],
+                    // Fetch completo: serve per il diff tra commit consecutivi
+                    extensions: [
+                        [$class: 'CloneOption', depth: 0, shallow: false, noTags: false]
+                    ]
+                ])
+                script {
+                    env.GIT_COMMIT_SHA = sh(script: 'git rev-parse HEAD',   returnStdout: true).trim()
+                    env.GIT_PREV_SHA   = sh(script: 'git rev-parse HEAD~1', returnStdout: true).trim()
+                    echo "[INFO] HEAD     : ${env.GIT_COMMIT_SHA}"
+                    echo "[INFO] HEAD~1   : ${env.GIT_PREV_SHA}"
+                }
+            }
+        }
+
+        /* ---------------------------------------------------------------------
+         *  STAGE 2 — Detect changed addons
+         *
+         *  Un addon valido è una sotto-directory della root che contiene
+         *  config.yaml oppure config.json (standard HA Supervisor).
+         *  Quando il trigger è il webhook usa i SHA before/after iniettati
+         *  dal Generic Webhook Trigger; altrimenti HEAD~1..HEAD.
+         * ------------------------------------------------------------------- */
+        stage('Detect') {
+            steps {
+                script {
+                    // Tutti gli addon presenti nel workspace (indipendentemente da cosa è cambiato)
+                    def allAddons = sh(
+                        script: '''
+                            find . -maxdepth 2 \\( -name 'config.yaml' -o -name 'config.json' \\) \
+                                | sed 's|^./||' \
+                                | xargs -I{} dirname {} \
+                                | grep -v '^\\.\\?$' \
+                                | grep -v '/' \
+                                | sort -u
+                        ''',
+                        returnStdout: true
+                    ).trim().split('\n').findAll { it?.trim() } as List
+
+                    echo "[INFO] Addon disponibili nel repo: ${allAddons}"
+
+                    List<String> toProcess
+
+                    if (params.BUILD_ALL) {
+                        toProcess = allAddons
+                        echo "[INFO] BUILD_ALL=true — selezionati tutti gli addon: ${toProcess}"
+
+                    } else {
+                        // SHA prima/dopo del push (da webhook o da git)
+                        def beforeSha = env.GITEA_BEFORE?.trim() ?: env.GIT_PREV_SHA
+                        def afterSha  = env.GITEA_AFTER?.trim()  ?: env.GIT_COMMIT_SHA
+
+                        // Diff: file modificati tra i due commit
+                        def changedFiles = sh(
+                            script: "git diff --name-only ${beforeSha} ${afterSha} 2>/dev/null || git diff --name-only HEAD~1 HEAD",
+                            returnStdout: true
+                        ).trim().split('\n').findAll { it?.trim() } as List
+
+                        echo "[INFO] File modificati: ${changedFiles}"
+
+                        // Estrai la top-level directory e filtra solo addon validi
+                        toProcess = changedFiles
+                            .collect  { it.split('/')[0] }
+                            .unique()
+                            .findAll  { dir -> allAddons.contains(dir) }
+
+                        if (toProcess.isEmpty()) {
+                            echo "[INFO] Nessun addon modificato in questo push — skip build."
+                        } else {
+                            echo "[INFO] Addon da buildare: ${toProcess}"
+                        }
+                    }
+
+                    // Serializza come stringa CSV per i prossimi stage
+                    env.ADDONS_TO_BUILD = toProcess.join(',')
+                }
+            }
+        }
+
+        /* ---------------------------------------------------------------------
+         *  STAGE 3 — Lint (parallel)
+         *
+         *  Eseguito in parallelo per ogni addon rilevato. Un fallimento
+         *  di lint marca lo stage UNSTABLE ma non interrompe gli altri addon.
+         *
+         *  Checks:
+         *   - hadolint     → Dockerfile best practices
+         *   - yaml/json    → config.yaml o config.json valido
+         *   - shellcheck   → tutti gli *.sh nella directory
+         * ------------------------------------------------------------------- */
+        stage('Lint') {
+            when { expression { env.ADDONS_TO_BUILD?.trim() } }
+            steps {
+                script {
+                    def addons   = env.ADDONS_TO_BUILD.split(',').findAll { it?.trim() } as List
+                    def lintOk   = [] as List
+                    def lintWarn = [] as List
+
+                    def lintJobs = addons.collectEntries { addon ->
+                        [(addon): {
+                            stage("lint ❯ ${addon}") {
+                                try {
+                                    // ---- Dockerfile ----
+                                    sh "docker run --rm -i hadolint/hadolint < ${addon}/Dockerfile"
+
+                                    // ---- Config (yaml o json) ----
+                                    def configYaml = "${addon}/config.yaml"
+                                    def configJson = "${addon}/config.json"
+                                    sh """
+                                        if [ -f ${configYaml} ]; then
+                                            python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" ${configYaml}
+                                            echo "[OK] ${addon}/config.yaml valido"
+                                        elif [ -f ${configJson} ]; then
+                                            python3 -c "import json,sys; json.load(open(sys.argv[1]))" ${configJson}
+                                            echo "[OK] ${addon}/config.json valido"
+                                        fi
+                                    """
+
+                                    // ---- Shell scripts ----
+                                    sh """
+                                        find ${addon}/ -name '*.sh' | while read f; do
+                                            echo "[INFO] shellcheck: \$f"
+                                            docker run --rm -v \$PWD:/mnt koalaman/shellcheck:stable /mnt/\$f
+                                        done
+                                    """
+
+                                    echo "[OK] ${addon}: tutti i check superati"
+                                    lintOk.add(addon)
+
+                                } catch (err) {
+                                    echo "[WARN] ${addon}: lint con avvisi — ${err.message}"
+                                    lintWarn.add(addon)
+                                    unstable("Lint warning in ${addon}")
+                                }
+                            }
+                        }]
+                    }
+
+                    parallel lintJobs
+
+                    // Serializza risultati lint per il summary
+                    def lintResultsMap = [:]
+                    lintOk.each   { lintResultsMap[it] = 'OK'   }
+                    lintWarn.each { lintResultsMap[it] = 'WARN' }
+                    env.LINT_RESULTS = lintResultsMap.collect { k, v -> "${k}:${v}" }.join(',')
+                }
+            }
+        }
+
+        /* ---------------------------------------------------------------------
+         *  STAGE 4 — Build & Push (parallel)
+         *
+         *  Per ogni addon:
+         *   1. Legge la versione da config.yaml / config.json
+         *   2. Legge build_from.amd64 e lo passa come --build-arg BUILD_FROM
+         *      (pattern standard dei Dockerfile HA con ARG BUILD_FROM)
+         *   3. docker build --platform linux/amd64
+         *   4. Push di :{version} e :latest
+         *
+         *  Un fallimento su un addon non blocca gli altri.
+         * ------------------------------------------------------------------- */
+        stage('Build & Push') {
+            when { expression { env.ADDONS_TO_BUILD?.trim() } }
+            steps {
+                script {
+                    def addons = env.ADDONS_TO_BUILD.split(',').findAll { it?.trim() } as List
+
+                    // Login al registry una sola volta prima dei build paralleli
+                    sh "echo \"\$REGISTRY_CREDS_PSW\" | docker login ${env.REGISTRY} -u \"\$REGISTRY_CREDS_USR\" --password-stdin"
+
+                    def buildResults = [:] // addon → [status, version]
+
+                    def buildJobs = addons.collectEntries { addon ->
+                        [(addon): {
+                            stage("build ❯ ${addon}") {
+                                try {
+                                    // Legge versione e build_from dalla config (yaml o json)
+                                    def metaScript = """
+import yaml, json, os, sys
+
+addon = sys.argv[1]
+for name in ('config.yaml', 'config.json'):
+    p = os.path.join(addon, name)
+    if os.path.exists(p):
+        with open(p) as f:
+            cfg = yaml.safe_load(f) if name.endswith('.yaml') else json.load(f)
+        version    = str(cfg.get('version', 'latest'))
+        build_from = (cfg.get('build_from') or {}).get('amd64', '')
+        print(f'{version}|{build_from}')
+        sys.exit(0)
+
+print('latest|')
+"""
+                                    writeFile file: '/tmp/read_meta.py', text: metaScript
+                                    def meta      = sh(script: "python3 /tmp/read_meta.py ${addon}", returnStdout: true).trim()
+                                    def parts     = meta.split('\\|')
+                                    def version   = parts[0]
+                                    def buildFrom = parts.size() > 1 ? parts[1] : ''
+
+                                    def imageBase    = "${env.REGISTRY}/hassio-addons/${addon}"
+                                    def buildArgLine = buildFrom ? "--build-arg BUILD_FROM=${buildFrom}" : ''
+                                    def labelSource  = "${env.GITEA_BASE_URL}/${params.GITEA_USER}/HomeAssistantAddOns"
+
+                                    echo "[INFO] ${addon}: versione=${version}, BUILD_FROM=${buildFrom ?: '(none)'}"
+
+                                    sh """
+                                        docker build \\
+                                            --platform linux/amd64 \\
+                                            ${buildArgLine} \\
+                                            --label "org.opencontainers.image.revision=${env.GIT_COMMIT_SHA}" \\
+                                            --label "org.opencontainers.image.source=${labelSource}" \\
+                                            --label "org.opencontainers.image.version=${version}" \\
+                                            -t ${imageBase}:${version} \\
+                                            -t ${imageBase}:latest \\
+                                            ${addon}/
+                                    """
+
+                                    sh "docker push ${imageBase}:${version}"
+                                    sh "docker push ${imageBase}:latest"
+
+                                    echo "[OK] ${addon}:${version} pushato su ${imageBase}"
+                                    buildResults[addon] = [status: 'OK', version: version]
+
+                                } catch (err) {
+                                    echo "[FAIL] Build di '${addon}' fallita: ${err.message}"
+                                    buildResults[addon] = [status: 'FAILED', version: '-']
+                                    unstable("Build fallita: ${addon}")
+                                }
+                            }
+                        }]
+                    }
+
+                    parallel buildJobs
+
+                    // Serializza per i prossimi stage
+                    env.BUILD_RESULTS = buildResults.collect { k, v ->
+                        "${k}:${v.status}:${v.version}"
+                    }.join(',')
+                }
+            }
+        }
+
+        /* ---------------------------------------------------------------------
+         *  STAGE 5 — Publish (aggiorna repository.json)
+         *
+         *  Eseguito solo se almeno un addon è stato buildato con successo.
+         *  Lo script Python:
+         *   - Legge/crea repository.json
+         *   - Upserta ogni addon buildato con successo (match su slug)
+         *   - Scrive il file aggiornato
+         *  Il commit usa [skip ci] nel messaggio per evitare loop webhook.
+         * ------------------------------------------------------------------- */
+        stage('Publish') {
+            when {
+                expression {
+                    env.BUILD_RESULTS?.split(',')?.any { it?.contains(':OK:') }
+                }
+            }
+            steps {
+                script {
+                    def successAddons = env.BUILD_RESULTS.split(',')
+                        .findAll { it?.contains(':OK:') }
+                        .collect { it.split(':')[0] }
+
+                    echo "[INFO] Aggiorno repository.json per: ${successAddons}"
+
+                    def updateScript = '''\
+import json, os, sys
+
+# Carica yaml solo se disponibile (config.yaml), altrimenti json
+try:
+    import yaml
+    HAS_YAML = True
+except ImportError:
+    HAS_YAML = False
+
+REGISTRY   = os.environ['REGISTRY']
+GITEA_URL  = os.environ['GITEA_BASE_URL']
+GITEA_USER = sys.argv[1]
+addons_arg = sys.argv[2:]
+
+repo_file = 'repository.json'
+skeleton  = {
+    'name':       f'HA Add-ons by {GITEA_USER}',
+    'url':        f'{GITEA_URL}/{GITEA_USER}/HomeAssistantAddOns',
+    'maintainer': GITEA_USER,
+    'addons':     []
+}
+repo = skeleton.copy()
+if os.path.exists(repo_file):
+    with open(repo_file) as f:
+        repo = json.load(f)
+repo.setdefault('addons', [])
+
+def load_cfg(addon_dir):
+    for name, loader in [('config.yaml', 'yaml'), ('config.json', 'json')]:
+        p = os.path.join(addon_dir, name)
+        if not os.path.exists(p):
+            continue
+        with open(p) as f:
+            if loader == 'yaml' and HAS_YAML:
+                return yaml.safe_load(f)
+            return json.load(f)
+    return {}
+
+changed = False
+for addon in addons_arg:
+    cfg = load_cfg(addon)
+    if not cfg:
+        print(f'[WARN] Nessuna config trovata per {addon}, skip', flush=True)
+        continue
+
+    slug    = cfg.get('slug', addon)
+    version = str(cfg.get('version', 'latest'))
+    entry   = {
+        'slug':        slug,
+        'name':        cfg.get('name', addon),
+        'description': cfg.get('description', ''),
+        'version':     version,
+        'url':         cfg.get('url', ''),
+        'arch':        cfg.get('arch', ['amd64']),
+        'image':       f'{REGISTRY}/hassio-addons/{slug}:{version}',
+    }
+
+    idx = next((i for i, a in enumerate(repo['addons']) if a.get('slug') == slug), None)
+    if idx is not None:
+        old_ver = repo['addons'][idx].get('version', '?')
+        repo['addons'][idx] = entry
+        print(f'[UPDATE] {slug}: {old_ver} → {version}', flush=True)
+    else:
+        repo['addons'].append(entry)
+        print(f'[ADD]    {slug} v{version}', flush=True)
+    changed = True
+
+if changed:
+    with open(repo_file, 'w') as f:
+        json.dump(repo, f, indent=2, ensure_ascii=False)
+        f.write('\\n')
+    print('[OK] repository.json aggiornato', flush=True)
+else:
+    print('[INFO] Nessuna modifica a repository.json', flush=True)
+'''
+                    writeFile file: '/tmp/update_repo.py', text: updateScript
+
+                    sh "python3 /tmp/update_repo.py \"${params.GITEA_USER}\" ${successAddons.join(' ')}"
+
+                    sh 'git diff repository.json || true'
+
+                    // Commit e push solo se ci sono modifiche staged
+                    withEnv(["GITEA_USER=${params.GITEA_USER}"]) {
+                        sh '''
+                            git config user.email "jenkins@pipelines.mt-home.uk"
+                            git config user.name  "Jenkins CI"
+                            git add repository.json
+                            if git diff --staged --quiet; then
+                                echo "[INFO] Nessuna modifica a repository.json da committare"
+                            else
+                                git commit -m "chore: update repository.json [skip ci]"
+                                git push \
+                                    "https://oauth2:${GITEA_CREDS_PSW}@git.mt-home.uk/${GITEA_USER}/HomeAssistantAddOns.git" \
+                                    HEAD:main
+                                echo "[OK] repository.json pushato su main"
+                            fi
+                        '''
+                    }
+                }
+            }
+        }
+
+    }   // end stages
+
+    // =========================================================================
+    /* -------------------------------------------------------------------------
+     *  POST ACTIONS
+     * ----------------------------------------------------------------------- */
+    post {
+        always {
+            script {
+                // Ricostruisce le mappe risultato dalla serializzazione CSV
+                def lintMap = env.LINT_RESULTS
+                    ? env.LINT_RESULTS.split(',').collectEntries {
+                        def p = it.split(':'); [(p[0]): p.size() > 1 ? p[1] : '-']
+                    } : [:]
+
+                def buildMap = env.BUILD_RESULTS
+                    ? env.BUILD_RESULTS.split(',').collectEntries {
+                        def p = it.split(':')
+                        [(p[0]): [status: p.size() > 1 ? p[1] : '-', version: p.size() > 2 ? p[2] : '-']]
+                    } : [:]
+
+                // Tabella riepilogativa
+                def addons  = env.ADDONS_TO_BUILD?.trim() ? env.ADDONS_TO_BUILD.split(',') as List : []
+                def header  = String.format('%-26s %-6s %-8s %-12s', 'Addon', 'Lint', 'Build', 'Version')
+                def divider = '─' * 56
+                def rows    = addons.collect { addon ->
+                    String.format('%-26s %-6s %-8s %-12s',
+                        addon,
+                        lintMap[addon]              ?: '─',
+                        buildMap[addon]?.status     ?: '─',
+                        buildMap[addon]?.version    ?: '─'
+                    )
+                }
+
+                echo "\n${divider}\n${header}\n${divider}\n${rows.join('\n')}\n${divider}"
+
+                if (addons.isEmpty()) {
+                    echo '[INFO] Nessun addon processato in questo build.'
+                }
+
+                // Notifica ntfy
+                def anyFailed = buildMap.any { _, v -> v.status == 'FAILED' }
+                def summary   = addons.isEmpty()
+                    ? "Build #${env.BUILD_NUMBER}: nessun addon da buildare"
+                    : anyFailed
+                        ? "Build #${env.BUILD_NUMBER}: uno o più addon falliti"
+                        : "Build #${env.BUILD_NUMBER}: ${buildMap.size()} addon completati ✓"
+
+                if (params.NTFY_URL?.trim()) {
+                    try {
+                        sh """
+                            curl -sf \\
+                                -H "Title: HA Add-ons CI" \\
+                                -H "Priority: ${anyFailed ? 'high' : 'default'}" \\
+                                -H "Tags: ${anyFailed ? 'warning' : 'white_check_mark'}" \\
+                                -d "${summary}" \\
+                                "${params.NTFY_URL}/${params.NTFY_TOPIC}" || true
+                        """
+                    } catch (e) {
+                        echo "[WARN] ntfy non raggiungibile: ${e.message}"
+                    }
+                }
+
+                // Notifica via shared-lib pipelineEvent (se disponibile)
+                try {
+                    pipelineEvent(
+                        title:   'HA Add-ons CI',
+                        context: 'Build & Push',
+                        status:  currentBuild.result ?: 'SUCCESS',
+                    )
+                } catch (e) {
+                    echo "[WARN] pipelineEvent fallito: ${e.message}"
+                }
+            }
+        }
+
+        success  { echo '[SUCCESS] ✓ Pipeline completata con successo.' }
+        unstable { echo '[WARN]    ⚠ Uno o più step con avvisi — verificare i log.' }
+        failure  { echo '[ERROR]   ✗ Pipeline fallita.' }
+        cleanup  {
+            sh 'docker logout ${REGISTRY} 2>/dev/null || true'
+            sh 'rm -f /tmp/read_meta.py /tmp/update_repo.py'
+        }
+    }
+
+}
