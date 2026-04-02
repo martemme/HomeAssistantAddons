@@ -119,42 +119,21 @@ pipeline {
     stages {
 
         /* ---------------------------------------------------------------------
-         *  STAGE 1 — Checkout
-         * ------------------------------------------------------------------- */
-        stage('Checkout') {
-            steps {
-                checkout([
-                    $class:  'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[
-                        url:           "${env.GITEA_BASE_URL}/${params.GITEA_USER}/HomeAssistantAddOns.git",
-                        credentialsId: 'gitea-credentials'
-                    ]],
-                    // Fetch completo: serve per il diff tra commit consecutivi
-                    extensions: [
-                        [$class: 'CloneOption', depth: 0, shallow: false, noTags: false]
-                    ]
-                ])
-                script {
-                    env.GIT_COMMIT_SHA = sh(script: 'git rev-parse HEAD',   returnStdout: true).trim()
-                    env.GIT_PREV_SHA   = sh(script: 'git rev-parse HEAD~1', returnStdout: true).trim()
-                    echo "[INFO] HEAD     : ${env.GIT_COMMIT_SHA}"
-                    echo "[INFO] HEAD~1   : ${env.GIT_PREV_SHA}"
-                }
-            }
-        }
-
-        /* ---------------------------------------------------------------------
-         *  STAGE 2 — Detect changed addons
+         *  STAGE 1 — Detect changed addons
          *
+         *  Il checkout è già fatto da "Declarative: Checkout SCM" automatico.
          *  Un addon valido è una sotto-directory della root che contiene
          *  config.yaml oppure config.json (standard HA Supervisor).
-         *  Quando il trigger è il webhook usa i SHA before/after iniettati
-         *  dal Generic Webhook Trigger; altrimenti HEAD~1..HEAD.
          * ------------------------------------------------------------------- */
         stage('Detect') {
             steps {
                 script {
+                    // SHA del commit corrente e del precedente (già nel workspace)
+                    env.GIT_COMMIT_SHA = sh(script: 'git rev-parse HEAD',   returnStdout: true).trim()
+                    env.GIT_PREV_SHA   = sh(script: 'git rev-parse HEAD~1', returnStdout: true).trim()
+                    echo "[INFO] HEAD     : ${env.GIT_COMMIT_SHA}"
+                    echo "[INFO] HEAD~1   : ${env.GIT_PREV_SHA}"
+
                     // Tutti gli addon presenti nel workspace (indipendentemente da cosa è cambiato)
                     def allAddons = sh(
                         script: '''
