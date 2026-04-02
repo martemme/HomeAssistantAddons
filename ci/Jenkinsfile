@@ -103,8 +103,9 @@ pipeline {
     environment {
         REGISTRY       = 'registry.mt-home.uk'
         GITEA_BASE_URL = 'https://git.mt-home.uk'
-        REGISTRY_CREDS = credentials('registry-credentials')
-        GITEA_CREDS    = credentials('gitea-credentials')
+        // Credenziali NON vincolate qui — usare withCredentials() dentro gli stage.
+        // Vincolare credentials() a livello di pipeline causa un abort immediato
+        // se la credenziale non esiste, prima ancora che giri qualsiasi stage.
     }
 
     options {
@@ -295,8 +296,15 @@ pipeline {
                 script {
                     def addons = env.ADDONS_TO_BUILD.split(',').findAll { it?.trim() } as List
 
-                    // Login al registry una sola volta prima dei build paralleli
-                    sh "echo \"\$REGISTRY_CREDS_PSW\" | docker login ${env.REGISTRY} -u \"\$REGISTRY_CREDS_USR\" --password-stdin"
+                    // Login al registry dentro withCredentials — non fallisce il
+                    // pipeline se la credenziale non esiste ancora (gestisce errore)
+                    withCredentials([usernamePassword(
+                        credentialsId:    'registry-credentials',
+                        usernameVariable: 'REGISTRY_USR',
+                        passwordVariable: 'REGISTRY_PSW'
+                    )]) {
+                        sh 'echo "$REGISTRY_PSW" | docker login ${REGISTRY} -u "$REGISTRY_USR" --password-stdin'
+                    }
 
                     def buildResults = [:] // addon → [status, version]
 
@@ -477,8 +485,12 @@ else:
                     sh 'git diff repository.json || true'
 
                     // Commit e push solo se ci sono modifiche staged
-                    withEnv(["GITEA_USER=${params.GITEA_USER}"]) {
-                        sh '''
+                    withCredentials([usernamePassword(
+                        credentialsId:    'gitea-credentials',
+                        usernameVariable: 'GITEA_PUSH_USR',
+                        passwordVariable: 'GITEA_PUSH_PSW'
+                    )]) {
+                        sh """
                             git config user.email "jenkins@pipelines.mt-home.uk"
                             git config user.name  "Jenkins CI"
                             git add repository.json
@@ -486,12 +498,12 @@ else:
                                 echo "[INFO] Nessuna modifica a repository.json da committare"
                             else
                                 git commit -m "chore: update repository.json [skip ci]"
-                                git push \
-                                    "https://oauth2:${GITEA_CREDS_PSW}@git.mt-home.uk/${GITEA_USER}/HomeAssistantAddOns.git" \
+                                git push \\
+                                    "https://oauth2:\${GITEA_PUSH_PSW}@git.mt-home.uk/${params.GITEA_USER}/HomeAssistantAddOns.git" \\
                                     HEAD:main
                                 echo "[OK] repository.json pushato su main"
                             fi
-                        '''
+                        """
                     }
                 }
             }
@@ -577,8 +589,14 @@ else:
         unstable { echo '[WARN]    ⚠ Uno o più step con avvisi — verificare i log.' }
         failure  { echo '[ERROR]   ✗ Pipeline fallita.' }
         cleanup  {
-            sh 'docker logout ${REGISTRY} 2>/dev/null || true'
-            sh 'rm -f /tmp/read_meta.py /tmp/update_repo.py'
+            script {
+                try {
+                    sh 'docker logout ${REGISTRY} 2>/dev/null || true'
+                    sh 'rm -f /tmp/read_meta.py /tmp/update_repo.py'
+                } catch (e) {
+                    echo "[WARN] cleanup: ${e.message}"
+                }
+            }
         }
     }
 
