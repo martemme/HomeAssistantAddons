@@ -210,30 +210,7 @@ pipeline {
                         [(addon): {
                             stage("lint ❯ ${addon}") {
                                 try {
-                                    // ---- Dockerfile ----
-                                    sh "docker run --rm -i hadolint/hadolint < ${addon}/Dockerfile"
-
-                                    // ---- Config (yaml o json) ----
-                                    def configYaml = "${addon}/config.yaml"
-                                    def configJson = "${addon}/config.json"
-                                    sh """
-                                        if [ -f ${configYaml} ]; then
-                                            python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" ${configYaml}
-                                            echo "[OK] ${addon}/config.yaml valido"
-                                        elif [ -f ${configJson} ]; then
-                                            python3 -c "import json,sys; json.load(open(sys.argv[1]))" ${configJson}
-                                            echo "[OK] ${addon}/config.json valido"
-                                        fi
-                                    """
-
-                                    // ---- Shell scripts ----
-                                    sh """
-                                        find ${addon}/ -name '*.sh' | while read f; do
-                                            echo "[INFO] shellcheck: \$f"
-                                            docker run --rm -v \$PWD:/mnt koalaman/shellcheck:stable /mnt/\$f
-                                        done
-                                    """
-
+                                    sh "bash ci/scripts/lint_addon.sh ${addon}"
                                     echo "[OK] ${addon}: tutti i check superati"
                                     lintOk.add(addon)
 
@@ -291,25 +268,7 @@ pipeline {
                         [(addon): {
                             stage("build ❯ ${addon}") {
                                 try {
-                                    // Legge versione e build_from dalla config (yaml o json)
-                                    def metaScript = """
-import yaml, json, os, sys
-
-addon = sys.argv[1]
-for name in ('config.yaml', 'config.json'):
-    p = os.path.join(addon, name)
-    if os.path.exists(p):
-        with open(p) as f:
-            cfg = yaml.safe_load(f) if name.endswith('.yaml') else json.load(f)
-        version    = str(cfg.get('version', 'latest'))
-        build_from = (cfg.get('build_from') or {}).get('amd64', '')
-        print(f'{version}|{build_from}')
-        sys.exit(0)
-
-print('latest|')
-"""
-                                    writeFile file: '/tmp/read_meta.py', text: metaScript
-                                    def meta      = sh(script: "python3 /tmp/read_meta.py ${addon}", returnStdout: true).trim()
+                                    def meta      = sh(script: "python3 ci/scripts/read_meta.py ${addon}", returnStdout: true).trim()
                                     def parts     = meta.split('\\|')
                                     def version   = parts[0]
                                     def buildFrom = parts.size() > 1 ? parts[1] : ''
@@ -381,108 +340,16 @@ print('latest|')
 
                     echo "[INFO] Aggiorno repository.json per: ${successAddons}"
 
-                    def updateScript = '''\
-import json, os, sys
-
-# Carica yaml solo se disponibile (config.yaml), altrimenti json
-try:
-    import yaml
-    HAS_YAML = True
-except ImportError:
-    HAS_YAML = False
-
-REGISTRY   = os.environ['REGISTRY']
-GITEA_URL  = os.environ['GITEA_BASE_URL']
-GITEA_USER = sys.argv[1]
-addons_arg = sys.argv[2:]
-
-repo_file = 'repository.json'
-skeleton  = {
-    'name':       f'HA Add-ons by {GITEA_USER}',
-    'url':        f'{GITEA_URL}/{GITEA_USER}/HomeAssistantAddOns',
-    'maintainer': GITEA_USER,
-    'addons':     []
-}
-repo = skeleton.copy()
-if os.path.exists(repo_file):
-    with open(repo_file) as f:
-        repo = json.load(f)
-repo.setdefault('addons', [])
-
-def load_cfg(addon_dir):
-    for name, loader in [('config.yaml', 'yaml'), ('config.json', 'json')]:
-        p = os.path.join(addon_dir, name)
-        if not os.path.exists(p):
-            continue
-        with open(p) as f:
-            if loader == 'yaml' and HAS_YAML:
-                return yaml.safe_load(f)
-            return json.load(f)
-    return {}
-
-changed = False
-for addon in addons_arg:
-    cfg = load_cfg(addon)
-    if not cfg:
-        print(f'[WARN] Nessuna config trovata per {addon}, skip', flush=True)
-        continue
-
-    slug    = cfg.get('slug', addon)
-    version = str(cfg.get('version', 'latest'))
-    entry   = {
-        'slug':        slug,
-        'name':        cfg.get('name', addon),
-        'description': cfg.get('description', ''),
-        'version':     version,
-        'url':         cfg.get('url', ''),
-        'arch':        cfg.get('arch', ['amd64']),
-        'image':       f'{REGISTRY}/hassio-addons/{slug}:{version}',
-    }
-
-    idx = next((i for i, a in enumerate(repo['addons']) if a.get('slug') == slug), None)
-    if idx is not None:
-        old_ver = repo['addons'][idx].get('version', '?')
-        repo['addons'][idx] = entry
-        print(f'[UPDATE] {slug}: {old_ver} → {version}', flush=True)
-    else:
-        repo['addons'].append(entry)
-        print(f'[ADD]    {slug} v{version}', flush=True)
-    changed = True
-
-if changed:
-    with open(repo_file, 'w') as f:
-        json.dump(repo, f, indent=2, ensure_ascii=False)
-        f.write('\\n')
-    print('[OK] repository.json aggiornato', flush=True)
-else:
-    print('[INFO] Nessuna modifica a repository.json', flush=True)
-'''
-                    writeFile file: '/tmp/update_repo.py', text: updateScript
-
-                    sh "python3 /tmp/update_repo.py \"${params.GITEA_USER}\" ${successAddons.join(' ')}"
+                    sh "python3 ci/scripts/update_repo.py \"${params.GITEA_USER}\" ${successAddons.join(' ')}"
 
                     sh 'git diff repository.json || true'
 
-                    // Commit e push solo se ci sono modifiche staged
                     withCredentials([usernamePassword(
                         credentialsId:    'GIT_TOKEN',
                         usernameVariable: 'GITEA_PUSH_USR',
                         passwordVariable: 'GITEA_PUSH_PSW'
                     )]) {
-                        sh """
-                            git config user.email "jenkins@pipelines.mt-home.uk"
-                            git config user.name  "Jenkins CI"
-                            git add repository.json
-                            if git diff --staged --quiet; then
-                                echo "[INFO] Nessuna modifica a repository.json da committare"
-                            else
-                                git commit -m "chore: update repository.json [skip ci]"
-                                git push \\
-                                    "https://oauth2:\${GITEA_PUSH_PSW}@git.mt-home.uk/${params.GITEA_USER}/HomeAssistantAddOns.git" \\
-                                    HEAD:main
-                                echo "[OK] repository.json pushato su main"
-                            fi
-                        """
+                        sh "bash ci/scripts/git_push_repo.sh \"${params.GITEA_USER}\" \"${env.GITEA_BASE_URL}\""
                     }
                 }
             }
@@ -571,7 +438,6 @@ else:
             script {
                 try {
                     sh 'docker logout ${REGISTRY} 2>/dev/null || true'
-                    sh 'rm -f /tmp/read_meta.py /tmp/update_repo.py'
                 } catch (e) {
                     echo "[WARN] cleanup: ${e.message}"
                 }
