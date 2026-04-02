@@ -30,7 +30,7 @@
  *
  *  Credenziali Jenkins richieste
  *  ------------------------------
- *  gitea-credentials     Username/Password — token Gitea (checkout + push)
+ *  GIT_TOKEN             Username/Password — token Gitea (checkout + push)
  *  registry-credentials  Username/Password — Docker registry
  *
  * ============================================================================
@@ -465,7 +465,7 @@ else:
 
                     // Commit e push solo se ci sono modifiche staged
                     withCredentials([usernamePassword(
-                        credentialsId:    'gitea-credentials',
+                        credentialsId:    'GIT_TOKEN',
                         usernameVariable: 'GITEA_PUSH_USR',
                         passwordVariable: 'GITEA_PUSH_PSW'
                     )]) {
