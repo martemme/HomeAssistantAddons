@@ -48,7 +48,7 @@ pipeline {
     parameters {
         string(
             name:         'GITEA_USER',
-            defaultValue: 'martemme',
+            defaultValue: 'martin',
             description:  'Username Gitea del repository HomeAssistantAddOns'
         )
         string(
@@ -526,7 +526,7 @@ else:
                 }
 
                 // Notifica ntfy
-                def anyFailed = buildMap.any { _, v -> v.status == 'FAILED' }
+                def anyFailed = buildMap.any { k, v -> v.status == 'FAILED' }
                 def summary   = addons.isEmpty()
                     ? "Build #${env.BUILD_NUMBER}: nessun addon da buildare"
                     : anyFailed
