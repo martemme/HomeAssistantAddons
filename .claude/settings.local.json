@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git -C \"F:/Dev/HomeAssistantAddons/HomeAssistantAddons\" add nfs/config.json)",
-      "Bash(git -C \"F:/Dev/HomeAssistantAddons/HomeAssistantAddons\" commit -m \"fix\\(nfs\\): use correct HA base images in build_from\")",
-      "Bash(git -C \"F:/Dev/HomeAssistantAddons/HomeAssistantAddons\" push)"
-    ]
-  }
-}
