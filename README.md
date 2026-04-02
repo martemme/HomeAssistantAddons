@@ -43,11 +43,6 @@ _OpenVAS is a full-featured vulnerability scanner. Its capabilities include unau
 
 [Official Repo](https://github.com/greenbone/openvas-scanner)
 
-## Sponsoring ❤️
-If you like this add-on and would like to support my work and future projects, you can buy me a coffee. ☕
-
-Sponsoring available on Paypal (https://paypal.me/martemme).
-
 [aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
 [armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg

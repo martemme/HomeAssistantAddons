@@ -87,7 +87,6 @@ based on the following:
 - `PATCH`: Backwards-compatible bugfixes and package updates.
 
 ---
-Made with ❤️ for automation and resilience.
 
 [semver]: http://semver.org/spec/v2.0.0.html
 [aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
