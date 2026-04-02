@@ -418,12 +418,26 @@ pipeline {
                     }
                 }
 
-                // Notifica via shared-lib pipelineEvent (se disponibile)
+                // Notifica via shared-lib pipelineEvent → Redis Stream
                 try {
+                    def finalStatus = currentBuild.result ?: 'SUCCESS'
+                    def addonNames  = addons.isEmpty() ? 'nessun addon' : addons.join(', ')
+                    def outcomeWord = (finalStatus == 'SUCCESS') ? 'Completato' : 'Fallito'
+
+                    def evResults = buildMap.collectEntries { addon, info ->
+                        def isOk = (info.status == 'OK')
+                        [(addon): [
+                            status:    isOk ? 'done' : 'failed',
+                            available: isOk,
+                            file:      isOk ? "${env.REGISTRY}/hassio-addons/${addon}:${info.version}" : null,
+                        ]]
+                    }
+
                     pipelineEvent(
-                        title:   'HA Add-ons CI',
-                        context: 'Build & Push',
-                        status:  currentBuild.result ?: 'SUCCESS',
+                        title:   "Build degli addon HA: ${addonNames}: ${outcomeWord}",
+                        context: 'ha-addons_build',
+                        status:  finalStatus,
+                        results: evResults,
                     )
                 } catch (e) {
                     echo "[WARN] pipelineEvent fallito: ${e.message}"
