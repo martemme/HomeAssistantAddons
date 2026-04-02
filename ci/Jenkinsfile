@@ -31,7 +31,7 @@
  *  Credenziali Jenkins richieste
  *  ------------------------------
  *  GIT_TOKEN             Username/Password — token Gitea (checkout + push)
- *  registry-credentials  Username/Password — Docker registry
+ *  REGISTRY               Username/Password — Docker registry
  *
  * ============================================================================
  */
@@ -255,7 +255,7 @@ pipeline {
                     // Login al registry dentro withCredentials — non fallisce il
                     // pipeline se la credenziale non esiste ancora (gestisce errore)
                     withCredentials([usernamePassword(
-                        credentialsId:    'registry-credentials',
+                        credentialsId:    'REGISTRY',
                         usernameVariable: 'REGISTRY_USR',
                         passwordVariable: 'REGISTRY_PSW'
                     )]) {
