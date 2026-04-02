@@ -2,9 +2,22 @@
 set -e
 
 CONFIG="/data/options.json"
-ACT_RUNNER="/usr/local/bin/act_runner"
-RUNNER_FILE="/data/.runner"
 ACT_RUNNER_CONFIG="/data/act_runner_config.yaml"
+RUNNER_FILE="/data/.runner"
+
+# Locate the act_runner binary (official image places it at /act_runner,
+# Dockerfile symlinks it to /usr/local/bin — accept either).
+ACT_RUNNER=$(command -v act_runner 2>/dev/null)
+if [[ -z "$ACT_RUNNER" ]]; then
+    for _candidate in /act_runner /usr/local/bin/act_runner /usr/bin/act_runner; do
+        if [[ -x "$_candidate" ]]; then ACT_RUNNER="$_candidate"; break; fi
+    done
+fi
+if [[ -z "$ACT_RUNNER" ]]; then
+    echo "[ERROR] act_runner binary not found. Searched: /act_runner, /usr/local/bin/act_runner, /usr/bin/act_runner"
+    exit 1
+fi
+echo "[INFO] Using act_runner at: ${ACT_RUNNER}"
 
 echo "[INFO] Reading configuration from ${CONFIG}..."
 

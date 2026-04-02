@@ -1,5 +1,5 @@
 name: Gitea act_runner
-version: "1.0.0"
+version: "1.0.1"
 slug: gitea_act_runner
 description: Run Gitea Actions jobs natively on your Home Assistant machine
 url: "https://github.com/martemme/HomeAssistantAddons/tree/main/gitea-act-runner"
