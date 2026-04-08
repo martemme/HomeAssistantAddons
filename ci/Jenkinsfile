@@ -108,6 +108,10 @@ pipeline {
         // se la credenziale non esiste, prima ancora che giri qualsiasi stage.
     }
 
+    tools {
+        dockerTool 'docker'
+    }
+
     options {
         disableConcurrentBuilds()
         timestamps()
