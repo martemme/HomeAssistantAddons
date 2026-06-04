@@ -66,6 +66,11 @@ pipeline {
             defaultValue: false,
             description:  'Forza build di TUTTI gli addon (ignora il diff)'
         )
+        string(
+            name:         'ISSUE_ID',
+            defaultValue: '',
+            description:  'Gitea issue ID correlata a questa build (es. "10"). Lasciare vuoto per fallback automatico.'
+        )
     }
 
     /* -------------------------------------------------------------------------
@@ -438,10 +443,14 @@ pipeline {
                     }
 
                     pipelineEvent(
-                        title:   "Build degli addon HA: ${addonNames}: ${outcomeWord}",
-                        context: 'ha-addons_build',
-                        status:  finalStatus,
-                        results: evResults,
+                        type:     'ci.ha-addons',
+                        title:    "Build degli addon HA: ${addonNames}: ${outcomeWord}",
+                        context:  'ha-addons_build',
+                        status:   finalStatus,
+                        issue_id: params.ISSUE_ID ?: '',
+                        branch:   env.BRANCH_NAME,
+                        commit:   env.GIT_COMMIT,
+                        results:  evResults,
                     )
                 } catch (e) {
                     echo "[WARN] pipelineEvent fallito: ${e.message}"
