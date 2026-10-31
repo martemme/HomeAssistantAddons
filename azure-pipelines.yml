@@ -1,0 +1,36 @@
+trigger:
+  branches:
+    include:
+      - '*'
+  tags:
+    include:
+      - '*'
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+    clean: true
+    fetchDepth: 0
+    persistCredentials: true
+
+  - bash: |
+      set -Eeuo pipefail
+      : "${GITHUB_DEPLOY_KEY_B64:?Missing secret variable GITHUB_DEPLOY_KEY_B64}"
+
+      install -d -m 700 "$HOME/.ssh"
+      printf '%s' "$GITHUB_DEPLOY_KEY_B64" | base64 --decode > "$HOME/.ssh/id_ed25519"
+      chmod 600 "$HOME/.ssh/id_ed25519"
+      printf '%s\n' 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl' > "$HOME/.ssh/known_hosts"
+      chmod 600 "$HOME/.ssh/known_hosts"
+      export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+
+      git remote add github git@github.com:martemme/HomeAssistantAddons.git
+      git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*' '+refs/tags/*:refs/tags/*'
+      git push --prune github '+refs/remotes/origin/*:refs/heads/*'
+      git push --prune github '+refs/tags/*:refs/tags/*'
+    displayName: Mirror ADO branches and tags to GitHub
+    env:
+      GITHUB_DEPLOY_KEY_B64: $(GITHUB_DEPLOY_KEY_B64)
