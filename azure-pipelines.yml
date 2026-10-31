@@ -1,3 +1,4 @@
+# Mirror the ADO repository's branches and tags to GitHub.
 trigger:
   branches:
     include:
