@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Scope the token to Caddy's startup check while retaining its private S6 runtime environment file.
+
 ## 0.1.1
 
 - Fix S6 user-bundle registration so the app starts correctly on Home Assistant.

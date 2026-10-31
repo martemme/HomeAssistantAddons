@@ -16,14 +16,15 @@ chmod 700 /data/caddy /data/config /var/run/s6/container_environment
 token="$(bashio::config 'cloudflare_api_token')"
 printf '%s' "${token}" > /var/run/s6/container_environment/CF_API_TOKEN
 chmod 600 /var/run/s6/container_environment/CF_API_TOKEN
-unset token
+unset CF_API_TOKEN
 
 python3 /usr/local/bin/generate_caddyfile.py \
     --options /data/options.json \
     --output /data/Caddyfile
 
-if ! /usr/bin/caddy validate --config /data/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
+if ! CF_API_TOKEN="${token}" /usr/bin/caddy validate --config /data/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
     bashio::log.error "Caddy configuration or Cloudflare token is invalid; review options, routes, drop-ins, and token scope."
     exit 1
 fi
+unset token
 bashio::log.info "Caddy configuration validated."
