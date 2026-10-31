@@ -1,0 +1,20 @@
+configuration:
+  domain:
+    name: Domain
+    description: Base DNS domain managed by Caddy.
+  email:
+    name: ACME contact email
+    description: Optional contact address for certificate authority notices.
+  cloudflare_api_token:
+    name: Cloudflare API token
+    description: Token restricted to Zone:Read and DNS:Edit for the configured domain.
+  routes:
+    name: Reverse proxy routes
+    description: Add a subdomain and upstream target for each service.
+    fields:
+      subdomain:
+        name: Subdomain
+        description: DNS label or labels before the base domain, for example home.
+      target:
+        name: Upstream target
+        description: Host and port, for example homeassistant:8123.
