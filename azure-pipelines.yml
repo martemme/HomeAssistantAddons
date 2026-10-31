@@ -29,6 +29,7 @@ steps:
 
       git remote add github git@github.com:martemme/HomeAssistantAddons.git
       git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*' '+refs/tags/*:refs/tags/*'
+      git symbolic-ref --delete refs/remotes/origin/HEAD 2>/dev/null || git update-ref -d refs/remotes/origin/HEAD 2>/dev/null || true
       git push --prune github '+refs/remotes/origin/*:refs/heads/*'
       git push --prune github '+refs/tags/*:refs/tags/*'
     displayName: Mirror ADO branches and tags to GitHub
