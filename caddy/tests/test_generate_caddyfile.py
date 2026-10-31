@@ -18,7 +18,7 @@ from generate_caddyfile import generate_caddyfile, main  # noqa: E402
 class GenerateCaddyfileTests(unittest.TestCase):
     def valid_options(self):
         return {
-            "domain": "mt-home.uk",
+            "domain": "example.com",
             "cloudflare_api_token": "secret-token-do-not-print",
             "routes": [
                 {"subdomain": "ha", "target": "homeassistant:8123"},
@@ -29,19 +29,19 @@ class GenerateCaddyfileTests(unittest.TestCase):
     def test_generates_domain_wildcard_routes_and_import(self):
         output = generate_caddyfile(self.valid_options())
 
-        self.assertIn("mt-home.uk, *.mt-home.uk", output)
+        self.assertIn("example.com, *.example.com", output)
         self.assertIn("dns cloudflare {env.CF_API_TOKEN}", output)
         self.assertIn("resolvers 1.1.1.1", output)
-        self.assertIn("@route_0 host ha.mt-home.uk", output)
+        self.assertIn("@route_0 host ha.example.com", output)
         self.assertIn("reverse_proxy @route_0 homeassistant:8123", output)
-        self.assertIn("@route_1 host photos.mt-home.uk", output)
+        self.assertIn("@route_1 host photos.example.com", output)
         self.assertIn("reverse_proxy @route_1 https://photos.internal:8443", output)
         self.assertIn("import /share/caddy/conf.d/*.caddy", output)
         self.assertNotIn("secret-token-do-not-print", output)
 
     def test_import_directive_is_inside_the_site_block(self):
         output = generate_caddyfile(self.valid_options())
-        site_start = output.index("mt-home.uk, *.mt-home.uk {")
+        site_start = output.index("example.com, *.example.com {")
         site_end = output.index("\n}", site_start)
         import_position = output.index("import /share/caddy/conf.d/*.caddy")
 
@@ -52,7 +52,7 @@ class GenerateCaddyfileTests(unittest.TestCase):
         options = self.valid_options()
         del options["domain"]
 
-        self.assertIn("mt-home.uk, *.mt-home.uk", generate_caddyfile(options))
+        self.assertIn("example.com, *.example.com", generate_caddyfile(options))
 
     def test_email_is_optional_and_included_when_supplied(self):
         options = self.valid_options()

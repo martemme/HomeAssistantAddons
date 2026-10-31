@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 
-_DEFAULT_DOMAIN = "mt-home.uk"
+_DEFAULT_DOMAIN = "example.com"
 _IMPORT_DIRECTIVE = "import /share/caddy/conf.d/*.caddy"
 _DOMAIN_LABEL = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\Z")
 _TARGET = re.compile(

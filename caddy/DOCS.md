@@ -1,62 +1,95 @@
 # Caddy 2 Dynamic Ingress
 
-Caddy terminates public HTTPS for `mt-home.uk` and `*.mt-home.uk`, then proxies each configured hostname to an HTTP or HTTPS upstream. Home Assistant remains an upstream at `homeassistant:8123`; this app does not rewrite Home Assistant configuration or install certificates into Home Assistant.
+Caddy terminates public HTTPS for your base domain (e.g., `example.com` and `*.example.com`), then proxies each configured hostname to an internal HTTP or HTTPS upstream service. Home Assistant remains an upstream (typically at `homeassistant:8123`); this add-on does not alter Home Assistant configuration or install certificates directly into Home Assistant.
 
 ## Requirements
 
-- A working Cloudflare API token scoped to `Zone:Read` and `DNS:Edit` for `mt-home.uk`.
-- Host TCP ports 80 and 443 available when the app is started. This app uses DNS-01 for certificate issuance, so port 80 is not needed for ACME validation, but it is used for HTTP-to-HTTPS redirects.
-- A Home Assistant version that supports the Supervisor app configuration in `config.json`.
+- A domain managed through Cloudflare DNS.
+- A Cloudflare API token scoped to `Zone:Read` and `DNS:Edit` for your target domain (or all zones).
+- Host TCP ports 80 and 443 available on the Home Assistant host when the add-on starts.
+  - DNS-01 challenge is used for certificate issuance, so port 80 is not required for ACME validation, but it is used for automatic HTTP-to-HTTPS redirects.
+- A Home Assistant version supporting Supervisor add-on configurations.
 
-The first successful ACME request creates temporary `_acme-challenge` TXT records in Cloudflare; Caddy removes them after validation. Caddy stores certificates and account data under `/data` so they survive restarts and are included in app backups.
+The first successful ACME request creates temporary `_acme-challenge` TXT records in Cloudflare via the DNS-01 API; Caddy automatically cleans them up after validation. Certificates and ACME account data are stored under `/data` inside the add-on container so they persist across restarts, updates, and Supervisor backups.
 
-## Configure
+## Configuration
 
-1. Install the app from the repository.
-2. In Configuration, set the Cloudflare token. The field is hidden in the UI; do not paste it into Caddyfile drop-ins or logs. Home Assistant `!secret` references may be used for this option.
-3. Keep `domain` as `mt-home.uk`, or set another domain managed by the same Cloudflare token.
-4. Add routes as pairs of `subdomain` and `target`. The default route is `home` → `homeassistant:8123`.
-5. Save and start/restart the app.
+1. Install the add-on from the repository in the Home Assistant Add-on Store.
+2. In the **Configuration** tab:
+   - **`domain`**: Enter your base/apex domain (e.g. `example.com`).
+   - **`cloudflare_api_token`**: Provide your Cloudflare API token. The field is masked in the UI; you can also use Home Assistant `!secret` references (e.g. `!secret cloudflare_token`).
+   - **`email`** *(optional)*: Contact email address for ACME/Let's Encrypt renewal notifications.
+   - **`routes`**: Define pairs of `subdomain` and `target`.
+3. Save the configuration and start the add-on.
 
-Example routes:
+### Example Routes
 
 ```json
 [
-  {"subdomain":"home","target":"homeassistant:8123"},
-  {"subdomain":"dns","target":"a0d7b954-adguard:80"},
-  {"subdomain":"storage","target":"minio:9001"},
-  {"subdomain":"ai","target":"ai-service:8644"}
+  {"subdomain": "home", "target": "homeassistant:8123"},
+  {"subdomain": "vault", "target": "vaultwarden:80"},
+  {"subdomain": "storage", "target": "minio:9001"},
+  {"subdomain": "media", "target": "jellyfin:8096"}
 ]
 ```
 
-A target can be `host:port`, `[IPv6-address]:port`, `http://host:port`, or `https://host:port`. Each subdomain must be a DNS name beneath the configured base domain; duplicate names and Caddyfile syntax in route values are rejected.
+- **`subdomain`**: Must be a valid DNS label beneath the configured base domain (e.g., `home` maps to `home.example.com`). Multi-level labels (e.g. `auth.app`) are supported.
+- **`target`**: Can be `host:port`, `[IPv6-address]:port`, `http://host:port`, or `https://host:port`.
+- Duplicate subdomains and malicious Caddyfile syntax injection are strictly validated and rejected on startup.
+
+## Home Assistant Reverse Proxy Trust (Important)
+
+When routing external traffic through Caddy to Home Assistant (`homeassistant:8123`), Home Assistant requires you to declare Caddy as a trusted reverse proxy in your `configuration.yaml`. If you see HTTP 400 errors or "A request from a reverse proxy was received from <IP>, but your HTTP integration is not set-up for reverse proxies", add the following to `configuration.yaml`:
+
+```yaml
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.30.32.0/23  # Default Docker network subnet for Home Assistant Supervisor add-ons
+    - 127.0.0.1
+    - ::1
+```
+
+Restart Home Assistant after updating `configuration.yaml`.
 
 ## Extend with Caddyfile drop-ins
 
-Create `/share/caddy/conf.d/` in the Home Assistant share and add one `.caddy` file per extension. The app imports matching files and reloads Caddy when their contents change. Example:
+You can add custom Caddy configurations by creating `.caddy` files under `/share/caddy/conf.d/` in the Home Assistant share. The add-on automatically monitors this directory and reloads Caddy whenever a file is added, modified, or removed.
+
+Example (`/share/caddy/conf.d/metrics.caddy`):
 
 ```caddyfile
-@metrics host metrics.mt-home.uk
+@metrics host metrics.example.com
 reverse_proxy @metrics prometheus:9090
 ```
 
-Drop-ins are executable proxy configuration. Only trusted administrators and deployment automation should be able to write them. The app mounts `/share` read-only and never executes shell commands from those files. Validate a change in the app logs before relying on it; if a reload is rejected, the last valid Caddy configuration remains active.
+> ⚠️ **Note**: Drop-ins are executable proxy directives. Only trusted administrators should have write access to `/share/caddy/conf.d/`. The add-on mounts `/share` as read-only. When a configuration change occurs, the add-on validates the new configuration before reloading; if syntax validation fails, Caddy keeps running with the previous valid configuration.
 
-## Security and network behavior
+## Security and Network Behavior
 
-- The app requests only TCP 80/443 and a read-only `/share` mount; it does not use host networking, privileged mode, Docker API, or broad Supervisor API roles.
-- The Cloudflare token is held in the app options and a runtime-only S6 environment file. It is not written into the generated Caddyfile; startup validation and reload output are suppressed so parser errors cannot echo secrets from the configuration.
-- Caddy sends standard reverse-proxy forwarding headers. This app does not alter Home Assistant settings. If the existing Home Assistant proxy trust policy rejects requests from the Supervisor app network, resolve that prerequisite before cutover; do not disable Home Assistant protection globally.
-- The Supervisor `ingress` feature is unrelated: this app is an external reverse proxy, not an embedded Home Assistant app panel.
+- The add-on only exposes host TCP ports 80 and 443 and mounts `/share` read-only; it does not require `host_network: true`, `privileged` mode, Docker socket access, or elevated Supervisor roles.
+- The Cloudflare token is kept securely in the add-on's private S6 environment runtime file (mode 0600) and is cleared from the generator environment. Secrets are never printed in logs or written into the static Caddyfile.
+- Caddy automatically passes standard proxy headers (`X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`).
+- Wildcard certificates (`*.example.com` and `example.com`) are generated via Let's Encrypt / ZeroSSL using Cloudflare DNS-01, meaning ports do not need to be open to the internet for issuance.
 
 ## Troubleshooting
 
-- **App cannot start / bind error:** another app may already own host port 80 or 443. Stop or reconfigure that service only after preserving its existing proxy routes.
-- **ACME DNS challenge fails:** verify Cloudflare token scope, public resolution of the zone, system time, and the Caddy log. Existing unrelated `_acme-challenge` records are not automatically deleted by this app.
-- **Route returns 502:** verify the target hostname/port is reachable from the Supervisor app network and that the upstream speaks the expected protocol.
-- **A drop-in does not apply:** check that it is under `/share/caddy/conf.d/`, has a `.caddy` suffix, and is valid Caddyfile syntax. A failed reload keeps the last working config.
-- **Home Assistant reports an untrusted proxy:** review the existing trusted-proxy settings before cutover; this app never edits them.
+- **Add-on fails to start / port bind error**: Another service (such as Nginx Proxy Manager or another reverse proxy) might already be listening on host port 80 or 443. Check that these ports are free.
+- **ACME DNS challenge fails**:
+  - Verify that your Cloudflare API token has `Zone:Read` and `DNS:Edit` permissions for the domain.
+  - Verify public DNS propagation for the domain.
+  - Check system clock / NTP synchronization on the host.
+  - Check the add-on logs for specific ACME error messages.
+- **502 Bad Gateway**: Verify that the target service hostname/IP and port are reachable from the add-on container network and that the service is running.
+- **Drop-in configuration not reloading**: Ensure the file is placed in `/share/caddy/conf.d/`, ends with `.caddy`, and contains valid Caddyfile syntax. Check add-on logs for validation errors.
+- **Home Assistant untrusted proxy error**: Review your Home Assistant `http` configuration as described in the [Home Assistant Reverse Proxy Trust](#home-assistant-reverse-proxy-trust-important) section.
 
-## Build and test
+## Build and Test
 
-The app builds Caddy with the Cloudflare DNS module in a pinned multi-stage Docker build. The repository's `ci/scripts/lint_addon.sh caddy` checks Dockerfile, metadata, and shell scripts; Python unit tests cover route validation and Caddyfile generation. A local Docker build checks the target architecture. A real HAOS installation is required to verify Supervisor behavior and ACME issuance.
+The add-on compiles Caddy with the Cloudflare DNS module (`github.com/caddy-dns/cloudflare`) in a pinned multi-stage Docker build. 
+
+The repository's `ci/scripts/lint_addon.sh caddy` verifies Dockerfile formatting, metadata, and shell scripts. Python unit tests cover route validation, Caddyfile generation, and S6 service layout:
+
+```bash
+python -m unittest discover -s tests
+```
