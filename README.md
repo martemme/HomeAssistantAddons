@@ -8,6 +8,13 @@ If you want to do add the repository manually, please follow the procedure highl
 
 ## Add-ons provided by this repository
 
+### [Caddy 2 Dynamic Ingress](./caddy)
+
+![Supports amd64 Architecture][amd64-shield]
+![Supports aarch64 Architecture][aarch64-shield]
+
+_Route configured subdomains to internal services and automatically obtain and renew wildcard TLS certificates via Cloudflare DNS-01._
+
 ### [MinIO](./minio)
 
 ![Supports amd64 Architecture][amd64-shield]

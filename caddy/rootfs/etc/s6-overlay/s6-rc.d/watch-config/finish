@@ -1,0 +1,9 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+set -Eeuo pipefail
+
+if [[ "${1:-0}" -ne 0 && "${1:-0}" -ne 256 ]]; then
+    bashio::log.error "Caddy config watcher exited with code ${1}; stopping the app."
+    echo "${1}" > /run/s6-linux-init-container-results/exitcode
+    exec /run/s6/basedir/bin/halt
+fi

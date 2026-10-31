@@ -1,0 +1,29 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+set -Eeuo pipefail
+
+if ! bashio::config.has_value 'cloudflare_api_token'; then
+    bashio::log.error "Cloudflare API token is required. Set it in the app configuration."
+    exit 1
+fi
+
+mkdir -p /data/caddy /data/config /var/run/s6/container_environment
+chmod 700 /data/caddy /data/config /var/run/s6/container_environment
+
+# S6 gives every service a minimal environment. Put the token in its private
+# runtime environment so both Caddy and the reload watcher can resolve the
+# Caddyfile's {env.CF_API_TOKEN} placeholder. Never log or persist the value.
+token="$(bashio::config 'cloudflare_api_token')"
+printf '%s' "${token}" > /var/run/s6/container_environment/CF_API_TOKEN
+chmod 600 /var/run/s6/container_environment/CF_API_TOKEN
+unset token
+
+python3 /usr/local/bin/generate_caddyfile.py \
+    --options /data/options.json \
+    --output /data/Caddyfile
+
+if ! /usr/bin/caddy validate --config /data/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
+    bashio::log.error "Caddy configuration or Cloudflare token is invalid; review options, routes, drop-ins, and token scope."
+    exit 1
+fi
+bashio::log.info "Caddy configuration validated."

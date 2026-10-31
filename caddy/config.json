@@ -1,0 +1,48 @@
+{
+  "name": "Caddy 2 Dynamic Ingress",
+  "version": "0.1.0",
+  "slug": "caddy",
+  "description": "Reverse proxy with automatic wildcard TLS via Cloudflare DNS-01.",
+  "url": "https://github.com/martemme/HomeAssistantAddons/tree/main/caddy",
+  "arch": [
+    "amd64",
+    "aarch64"
+  ],
+  "startup": "services",
+  "boot": "auto",
+  "init": false,
+  "ports": {
+    "80/tcp": 80,
+    "443/tcp": 443
+  },
+  "ports_description": {
+    "80/tcp": "HTTP (redirects to HTTPS)",
+    "443/tcp": "HTTPS reverse proxy"
+  },
+  "map": [
+    {
+      "type": "share",
+      "read_only": true
+    }
+  ],
+  "options": {
+    "domain": "mt-home.uk",
+    "routes": [
+      {
+        "subdomain": "home",
+        "target": "homeassistant:8123"
+      }
+    ]
+  },
+  "schema": {
+    "domain": "str",
+    "email": "email?",
+    "cloudflare_api_token": "password(1,)",
+    "routes": [
+      {
+        "subdomain": "str",
+        "target": "str"
+      }
+    ]
+  }
+}
