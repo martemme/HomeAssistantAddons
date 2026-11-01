@@ -4,9 +4,11 @@
 
 [![Add repository on my Home Assistant][repository-badge]][repository-url]
 
-If you want to do add the repository manually, please follow the procedure highlighted in the [Home Assistant website](https://home-assistant.io/hassio/installing_third_party_addons). Use the following URL to add this repository: https://github.com/martemme/HomeAssistantAddons
+If you want to add the repository manually, please follow the procedure highlighted in the [Home Assistant website](https://home-assistant.io/hassio/installing_third_party_addons). Use the following URL to add this repository: `https://github.com/martemme/HomeAssistantAddons`
 
-## Add-ons provided by this repository
+---
+
+## Active Add-ons
 
 ### [Caddy 2 Dynamic Ingress](./caddy)
 
@@ -24,15 +26,6 @@ _MinIO is a High Performance Object Storage released under GNU Affero General Pu
 
 [Official Repo](https://github.com/minio/minio)
 
-### [SonarQube](./sonarqube)
-
-![Supports amd64 Architecture][amd64-shield]
-![Supports aarch64 Architecture][aarch64-shield]
-
-_SonarQube Server helps you comply with common code security standards, such as the NIST SSDF, OWASP, CWE, STIG, and CASA._
-
-[Official Repo](https://github.com/SonarSource/sonarqube)
-
 ### [NFS Server](./nfs)
 
 ![Supports amd64 Architecture][amd64-shield]
@@ -41,18 +34,52 @@ _SonarQube Server helps you comply with common code security standards, such as 
 
 _Expose Home Assistant folders (media, share, config, backup) via NFS to other devices on the network._
 
-### [GVM](./gvm)
+---
 
+## ⚠️ Deprecated Add-ons (Dismissione Programmata: 01 Dicembre 2026)
+
+> [!WARNING]
+> Gli add-on elencati in questa sezione sono formalmente **deprecati** e verranno **completamente rimossi dal catalogo e dismessi il 01 dicembre 2026**. Non riceveranno ulteriori aggiornamenti o correzioni di sicurezza. Si raccomanda di pianificare la migrazione dei carichi di lavoro.
+
+### [Gitea act_runner](./gitea-act-runner)
+
+[![Status: Deprecated](https://img.shields.io/badge/status-deprecated-critical.svg)](./gitea-act-runner/README.md)
+[![Decommission Date](https://img.shields.io/badge/decommission-01%20Dec%202026-orange.svg)](./gitea-act-runner/README.md)
 ![Supports amd64 Architecture][amd64-shield]
 ![Supports aarch64 Architecture][aarch64-shield]
 
-_OpenVAS is a full-featured vulnerability scanner. Its capabilities include unauthenticated and authenticated testing, various high-level and low-level internet and industrial protocols, performance tuning for large-scale scans and a powerful internal programming language to implement any type of vulnerability test._
+_Runs the Gitea Actions runner natively on your Home Assistant machine._  
+**Nota:** Deprecato e dismesso il 01/12/2026. Migrare su runner standalone o agent pool dedicato.
+
+### [GVM (OpenVAS)](./gvm)
+
+[![Status: Deprecated](https://img.shields.io/badge/status-deprecated-critical.svg)](./gvm/README.md)
+[![Decommission Date](https://img.shields.io/badge/decommission-01%20Dec%202026-orange.svg)](./gvm/README.md)
+![Supports amd64 Architecture][amd64-shield]
+![Supports aarch64 Architecture][aarch64-shield]
+
+_OpenVAS full-featured vulnerability scanner inside a Docker container._  
+**Nota:** Deprecato e dismesso il 01/12/2026. Migrare le scansioni di vulnerabilità su nodi dedicati.
 
 [Official Repo](https://github.com/greenbone/openvas-scanner)
+
+### [SonarQube](./sonarqube)
+
+[![Status: Deprecated](https://img.shields.io/badge/status-deprecated-critical.svg)](./sonarqube/README.md)
+[![Decommission Date](https://img.shields.io/badge/decommission-01%20Dec%202026-orange.svg)](./sonarqube/README.md)
+![Supports amd64 Architecture][amd64-shield]
+![Supports aarch64 Architecture][aarch64-shield]
+
+_SonarQube Server helps you comply with common code security standards (NIST SSDF, OWASP, CWE, STIG, CASA)._  
+**Nota:** Deprecato e dismesso il 01/12/2026. Migrare l'analisi statica su server/container dedicato.
+
+[Official Repo](https://github.com/SonarSource/sonarqube)
+
+---
 
 [aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
 [armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
 [i386-shield]: https://img.shields.io/badge/i386-yes-green.svg
 [repository-badge]: https://img.shields.io/badge/Add%20repository%20to%20my-Home%20Assistant-41BDF5?logo=home-assistant&style=for-the-badge
-[repository-url]: https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmincka%2Fha-addons
+[repository-url]: https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmartemme%2FHomeAssistantAddons

@@ -1,7 +1,18 @@
 # Home Assistant Add-on: Gitea act_runner
 
+[![Status: Deprecated](https://img.shields.io/badge/status-deprecated-critical.svg)](#-deprecation-notice--avviso-di-deprecazione)
+[![Decommission Date](https://img.shields.io/badge/decommission-01%20Dec%202026-orange.svg)](#-deprecation-notice--avviso-di-deprecazione)
 ![Supports amd64 Architecture][amd64-shield]
 ![Supports aarch64 Architecture][aarch64-shield]
+
+> [!WARNING]
+> ### ⚠️ DEPRECATION NOTICE / AVVISO DI DEPRECAZIONE
+>
+> **EN:** This add-on is officially **deprecated** and will be permanently decommissioned and removed on **01 December 2026**.  
+> No further features, maintenance, or bug fixes will be released. Please migrate your CI/CD workloads to dedicated runner environments (such as Docker on VM/bare-metal or Azure Pipelines self-hosted agents) prior to the decommissioning date.
+>
+> **IT:** Questo add-on è ufficialmente **deprecato** e verrà dismesso definitivamente il **01 dicembre 2026**.  
+> Non verranno rilasciati ulteriori aggiornamenti, funzionalità o correzioni di bug. Si invita a migrare i runner CI/CD su ambienti dedicati (es. Docker host su VM o agent self-hosted di Azure Pipelines) entro la data indicata.
 
 This add-on runs the **[Gitea Actions runner](https://gitea.com/gitea/act_runner)** natively on your Home Assistant machine, perfect for:
 

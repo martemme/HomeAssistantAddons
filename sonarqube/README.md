@@ -1,7 +1,18 @@
 # Home Assistant Add-on: SonarQube
 
+[![Status: Deprecated](https://img.shields.io/badge/status-deprecated-critical.svg)](#-deprecation-notice--avviso-di-deprecazione)
+[![Decommission Date](https://img.shields.io/badge/decommission-01%20Dec%202026-orange.svg)](#-deprecation-notice--avviso-di-deprecazione)
 ![Supports amd64 Architecture](https://img.shields.io/badge/amd64-yes-green.svg)
 ![Supports aarch64 Architecture](https://img.shields.io/badge/aarch64-yes-green.svg)
+
+> [!WARNING]
+> ### ⚠️ DEPRECATION NOTICE / AVVISO DI DEPRECAZIONE
+>
+> **EN:** This add-on is officially **deprecated** and will be permanently decommissioned and removed on **01 December 2026**.  
+> No further SonarQube version bumps, database connectors, or security patches will be published in this repository. Please migrate code quality and security analysis instances to dedicated standalone servers or centralized CI/CD services prior to the decommissioning date.
+>
+> **IT:** Questo add-on è ufficialmente **deprecato** e verrà dismesso definitivamente il **01 dicembre 2026**.  
+> Non verranno rilasciate ulteriori versioni di SonarQube, aggiornamenti di connettori database o patch di sicurezza. Si raccomanda di migrare le istanze di analisi qualità codice su server standalone dedicati o servizi CI/CD centralizzati entro la data indicata.
 
 This add-on provides a **SonarQube** server that helps you comply with common code security standards such as the NIST SSDF, OWASP, CWE, STIG, and CASA. It is designed to be **production-ready**, secure, and lightweight, and integrates seamlessly with Home Assistant.
 
