@@ -1,5 +1,8 @@
 # Gitea act_runner
 
+> [!WARNING]
+> **DEPRECATION NOTICE**: This add-on is officially **deprecated** and will be permanently decommissioned on **01 December 2026**.
+
 Runs the Gitea Actions runner on your Home Assistant machine.  
 The runner self-registers on first boot and persists its state across restarts.
 
