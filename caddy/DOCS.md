@@ -39,18 +39,35 @@ The first successful ACME request creates temporary `_acme-challenge` TXT record
 
 ## Home Assistant Reverse Proxy Trust (Important)
 
-When routing external traffic through Caddy to Home Assistant (`homeassistant:8123`), Home Assistant requires you to declare Caddy as a trusted reverse proxy in your `configuration.yaml`. If you see HTTP 400 errors or "A request from a reverse proxy was received from <IP>, but your HTTP integration is not set-up for reverse proxies", add the following to `configuration.yaml`:
+When routing traffic through Caddy to Home Assistant (`homeassistant:8123`), Home Assistant must trust the reverse proxy before it accepts the forwarded client address. Without the matching settings, Home Assistant blocks proxied requests and may return HTTP 400 or log that a request from a reverse proxy was received but the HTTP integration is not configured for reverse proxies.
+
+### Home Assistant 2026.8 and newer
+
+Home Assistant 2026.8 moved HTTP server configuration to the UI. Do not add or maintain the reverse-proxy settings in `configuration.yaml` for these releases; use:
+
+1. Go to **Settings → System → Network**, then find the **HTTP server** section.
+2. Turn on **Trust X-Forwarded-For**.
+3. Add the **actual Caddy proxy IP address as seen by Home Assistant** to **Trusted proxies**. Determine this for your own installation, such as by checking the source address in Home Assistant's reverse-proxy error/log entry and confirming the Caddy add-on's assigned network address. The address to trust is the Caddy-to-Home-Assistant connection peer, not the public IP of a browser or client.
+4. Save the HTTP server settings. Home Assistant restarts. When the UI returns, review the proposed change (the Italian UI labels this step **“Esamina la modifica”**) and explicitly confirm it within **5 minutes**. If it is not confirmed during that window, Home Assistant automatically rolls the settings back to the previous values.
+
+Trust only the verified proxy address. Do not assume the default Supervisor/add-on network applies to every installation and do not add a broad subnet just to make the error disappear. Prefer a single proxy IP when stable. Use a CIDR only when needed and after verifying that it is the smallest network containing the proxy; when entering a CIDR, use its network address (for example, `192.168.1.0/24`), not a host address with a mask (for example, `192.168.1.50/24`).
+
+If an existing `http:` YAML block was imported during upgrade, check the values in the UI and follow Home Assistant's migration/Repair guidance to remove the obsolete block from `configuration.yaml`.
+
+### Home Assistant versions older than 2026.8
+
+Before 2026.8, configure reverse-proxy trust in `configuration.yaml`. Replace the documentation-only address below with the actual Caddy proxy IP verified for your installation. Do not substitute a broad subnet unless it is required, verified, and narrowly scoped.
 
 ```yaml
 http:
   use_x_forwarded_for: true
   trusted_proxies:
-    - 172.30.32.0/23  # Default Docker network subnet for Home Assistant Supervisor add-ons
-    - 127.0.0.1
-    - ::1
+    - 192.0.2.10  # Example only: replace with the actual Caddy proxy IP
 ```
 
-Restart Home Assistant after updating `configuration.yaml`.
+Restart Home Assistant after editing the YAML configuration.
+
+See the [official Home Assistant HTTP integration documentation](https://www.home-assistant.io/integrations/http/) for the current UI fields, reverse-proxy requirements, CIDR format, five-minute confirmation/rollback, and YAML migration instructions.
 
 ## Extend with Caddyfile drop-ins
 
@@ -82,7 +99,7 @@ reverse_proxy @metrics prometheus:9090
   - Check the add-on logs for specific ACME error messages.
 - **502 Bad Gateway**: Verify that the target service hostname/IP and port are reachable from the add-on container network and that the service is running.
 - **Drop-in configuration not reloading**: Ensure the file is placed in `/share/caddy/conf.d/`, ends with `.caddy`, and contains valid Caddyfile syntax. Check add-on logs for validation errors.
-- **Home Assistant HTTP 400 / forwarded-header error**: The add-on sends an IP-only `X-Forwarded-For`. If using a custom drop-in, use `{http.request.remote.host}`, not `{remote}`, which includes the client port. Also review your Home Assistant `http` configuration as described in the [Home Assistant Reverse Proxy Trust](#home-assistant-reverse-proxy-trust-important) section.
+- **Home Assistant HTTP 400 / forwarded-header error**: The add-on sends an IP-only `X-Forwarded-For`. If using a custom drop-in, use `{http.request.remote.host}`, not `{remote}`, which includes the client port. Also review the Home Assistant reverse-proxy trust settings described above, using the actual Caddy proxy IP seen by Home Assistant.
 
 ## Build and Test
 

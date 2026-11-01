@@ -71,18 +71,23 @@ routes:
 
 ## 🌐 Home Assistant Trusted Proxy Configuration
 
-To allow Home Assistant to accept requests forwarded through Caddy without throwing HTTP 400 errors, configure reverse proxy trust in your `configuration.yaml`:
+For **Home Assistant 2026.8 and newer**, configure reverse-proxy trust in the UI:
+
+1. Open **Settings → System → Network** and find **HTTP server**.
+2. Enable **Trust X-Forwarded-For**.
+3. Under **Trusted proxies**, add the actual IP address of this Caddy add-on as Home Assistant sees it. Find and verify that address for your installation (for example, from Home Assistant's reverse-proxy error/log entry and your add-on network assignment); it is not the public address of the remote browser. Use a CIDR only if the proxy's address genuinely requires it, and verify the exact, smallest network. Do not copy a generic subnet or trust a broad network by default.
+4. Save the settings. Home Assistant restarts; when it returns, review the proposed change and confirm it using **“Esamina la modifica”** (or the equivalent review prompt in your UI). Confirm within **5 minutes**. If you do not confirm in time, Home Assistant automatically restores the previous settings.
+
+For Home Assistant versions **older than 2026.8**, configure the HTTP integration in `configuration.yaml` instead, replacing the example address with the verified Caddy proxy IP:
 
 ```yaml
 http:
   use_x_forwarded_for: true
   trusted_proxies:
-    - 172.30.32.0/23  # Standard Docker network for Home Assistant Supervisor add-ons
-    - 127.0.0.1
-    - ::1
+    - 192.0.2.10  # Example only: replace with the actual Caddy proxy IP
 ```
 
-Restart Home Assistant after saving.
+Do not use the legacy YAML block as the configuration method on 2026.8 or newer; follow Home Assistant's migration guidance if an existing `http:` block was imported. See the [official Home Assistant HTTP integration documentation](https://www.home-assistant.io/integrations/http/) for current options and migration details.
 
 ---
 
