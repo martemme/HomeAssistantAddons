@@ -114,7 +114,14 @@ def generate_caddyfile(options):
 
     lines.extend((f"{domain}, *.{domain} {{", "\ttls {", "\t\tdns cloudflare {env.CF_API_TOKEN}", "\t\tresolvers 1.1.1.1", "\t}"))
     for index, (hostname, target) in enumerate(routes):
-        lines.extend((f"\t@route_{index} host {hostname}", f"\treverse_proxy @route_{index} {target}"))
+        lines.extend(
+            (
+                f"\t@route_{index} host {hostname}",
+                f"\treverse_proxy @route_{index} {target} {{",
+                "\t\theader_up X-Forwarded-For {http.request.remote.host}",
+                "\t}",
+            )
+        )
     lines.extend((f"\t{_IMPORT_DIRECTIVE}", "}", ""))
     return "\n".join(lines)
 

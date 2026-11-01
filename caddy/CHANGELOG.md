@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- Send an IP-only `X-Forwarded-For` value to upstreams, avoiding `IP:port` values that Home Assistant may reject with HTTP 400.
+
 ## 0.1.3
 
 - Generalize documentation and default configuration for community homelab setups.

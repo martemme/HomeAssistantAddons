@@ -39,6 +39,14 @@ class GenerateCaddyfileTests(unittest.TestCase):
         self.assertIn("import /share/caddy/conf.d/*.caddy", output)
         self.assertNotIn("secret-token-do-not-print", output)
 
+    def test_sends_ip_only_x_forwarded_for_to_each_upstream(self):
+        output = generate_caddyfile(self.valid_options())
+
+        self.assertEqual(
+            output.count("header_up X-Forwarded-For {http.request.remote.host}"),
+            2,
+        )
+
     def test_import_directive_is_inside_the_site_block(self):
         output = generate_caddyfile(self.valid_options())
         site_start = output.index("example.com, *.example.com {")

@@ -69,7 +69,7 @@ reverse_proxy @metrics prometheus:9090
 
 - The add-on only exposes host TCP ports 80 and 443 and mounts `/share` read-only; it does not require `host_network: true`, `privileged` mode, Docker socket access, or elevated Supervisor roles.
 - The Cloudflare token is kept securely in the add-on's private S6 environment runtime file (mode 0600) and is cleared from the generator environment. Secrets are never printed in logs or written into the static Caddyfile.
-- Caddy automatically passes standard proxy headers (`X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`).
+- Caddy passes standard proxy headers (`X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`); the add-on explicitly formats `X-Forwarded-For` as an IP only, without a port, for Home Assistant compatibility.
 - Wildcard certificates (`*.example.com` and `example.com`) are generated via Let's Encrypt / ZeroSSL using Cloudflare DNS-01, meaning ports do not need to be open to the internet for issuance.
 
 ## Troubleshooting
@@ -82,7 +82,7 @@ reverse_proxy @metrics prometheus:9090
   - Check the add-on logs for specific ACME error messages.
 - **502 Bad Gateway**: Verify that the target service hostname/IP and port are reachable from the add-on container network and that the service is running.
 - **Drop-in configuration not reloading**: Ensure the file is placed in `/share/caddy/conf.d/`, ends with `.caddy`, and contains valid Caddyfile syntax. Check add-on logs for validation errors.
-- **Home Assistant untrusted proxy error**: Review your Home Assistant `http` configuration as described in the [Home Assistant Reverse Proxy Trust](#home-assistant-reverse-proxy-trust-important) section.
+- **Home Assistant HTTP 400 / forwarded-header error**: The add-on sends an IP-only `X-Forwarded-For`. If using a custom drop-in, use `{http.request.remote.host}`, not `{remote}`, which includes the client port. Also review your Home Assistant `http` configuration as described in the [Home Assistant Reverse Proxy Trust](#home-assistant-reverse-proxy-trust-important) section.
 
 ## Build and Test
 
