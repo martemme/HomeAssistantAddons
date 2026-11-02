@@ -1,0 +1,26 @@
+name: Vector Log Forwarder
+version: "1.0.0"
+slug: vector
+description: Forward HAOS, Home Assistant Core, and add-on journal logs to VictoriaLogs.
+url: "https://github.com/martemme/HomeAssistantAddons/tree/main/vector"
+
+arch:
+  - amd64
+  - aarch64
+
+startup: services
+boot: auto
+init: false
+journald: true
+
+build_from:
+  amd64: "ghcr.io/home-assistant/base-debian:trixie"
+  aarch64: "ghcr.io/home-assistant/base-debian:trixie"
+
+options:
+  victorialogs_url: "http://10.30.20.20:9428"
+  host_label: "homeassistant"
+
+schema:
+  victorialogs_url: url
+  host_label: str

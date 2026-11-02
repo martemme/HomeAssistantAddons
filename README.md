@@ -10,6 +10,13 @@ If you want to add the repository manually, please follow the procedure highligh
 
 ## Active Add-ons
 
+### [Vector Log Forwarder](./vector)
+
+![Supports amd64 Architecture][amd64-shield]
+![Supports aarch64 Architecture][aarch64-shield]
+
+_Forwards Home Assistant OS, Core, and add-on container journal logs to VictoriaLogs._
+
 ### [Caddy 2 Dynamic Ingress](./caddy)
 
 ![Supports amd64 Architecture][amd64-shield]

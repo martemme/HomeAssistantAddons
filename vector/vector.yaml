@@ -1,0 +1,128 @@
+data_dir: /data/vector
+
+sources:
+  haos_journal:
+    type: journald
+    data_dir: /data/vector
+    journal_directory: "__JOURNAL_DIRECTORY__"
+
+transforms:
+  normalize_haos_journal:
+    type: remap
+    inputs:
+      - haos_journal
+    source: |
+      .host = "__HOST_LABEL__"
+      if exists(.CONTAINER_NAME) {
+        .source_type = "haos_addon"
+        .service = .CONTAINER_NAME
+      } else {
+        .source_type = "haos_system"
+        if exists(.SYSLOG_IDENTIFIER) {
+          .service = to_string!(.SYSLOG_IDENTIFIER)
+        } else if exists(._SYSTEMD_UNIT) {
+          .service = to_string!(._SYSTEMD_UNIT)
+        } else {
+          .service = "system"
+        }
+      }
+      if exists(.MESSAGE) {
+        ._msg = to_string!(.MESSAGE)
+        del(.MESSAGE)
+      } else if exists(.message) {
+        ._msg = to_string!(.message)
+        del(.message)
+      } else {
+        ._msg = ""
+      }
+
+sinks:
+  victorialogs:
+    type: http
+    inputs:
+      - normalize_haos_journal
+    uri: "http://victorialogs.local:9428/insert/jsonline?_stream_fields=host,source_type,service&_msg_field=_msg&_time_field=timestamp"
+    encoding:
+      codec: json
+    framing:
+      method: newline_delimited
+    compression: gzip
+    healthcheck:
+      enabled: false
+    request:
+      headers:
+        VL-Time-Field: timestamp
+
+tests:
+  - name: classify Home Assistant container journal entry
+    inputs:
+      - insert_at: normalize_haos_journal
+        type: log
+        log_fields:
+          CONTAINER_NAME: homeassistant
+          MESSAGE: "Home Assistant started"
+          timestamp: "2026-11-02T00:00:00Z"
+    outputs:
+      - extract_from: normalize_haos_journal
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.host, "__HOST_LABEL__")
+              assert_eq!(.source_type, "haos_addon")
+              assert_eq!(.service, "homeassistant")
+              assert_eq!(._msg, "Home Assistant started")
+              assert!(!exists(.MESSAGE))
+
+  - name: classify HAOS add-on container journal entry
+    inputs:
+      - insert_at: normalize_haos_journal
+        type: log
+        log_fields:
+          CONTAINER_NAME: addon_local_caddy
+          MESSAGE: "Caddy listener ready"
+          timestamp: "2026-11-02T00:00:00Z"
+    outputs:
+      - extract_from: normalize_haos_journal
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.host, "__HOST_LABEL__")
+              assert_eq!(.source_type, "haos_addon")
+              assert_eq!(.service, "addon_local_caddy")
+              assert_eq!(._msg, "Caddy listener ready")
+  - name: classify HAOS system journal entry
+    inputs:
+      - insert_at: normalize_haos_journal
+        type: log
+        log_fields:
+          SYSLOG_IDENTIFIER: systemd
+          _SYSTEMD_UNIT: systemd-journald.service
+          MESSAGE: "system journal ready"
+          timestamp: "2026-11-02T00:00:00Z"
+    outputs:
+      - extract_from: normalize_haos_journal
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.host, "__HOST_LABEL__")
+              assert_eq!(.source_type, "haos_system")
+              assert_eq!(.service, "systemd")
+              assert_eq!(._msg, "system journal ready")
+
+  - name: fall back to the HAOS systemd unit without an identifier
+    inputs:
+      - insert_at: normalize_haos_journal
+        type: log
+        log_fields:
+          _SYSTEMD_UNIT: systemd-journald.service
+          MESSAGE: "journal service ready"
+          timestamp: "2026-11-02T00:00:00Z"
+    outputs:
+      - extract_from: normalize_haos_journal
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.host, "__HOST_LABEL__")
+              assert_eq!(.source_type, "haos_system")
+              assert_eq!(.service, "systemd-journald.service")
+              assert_eq!(._msg, "journal service ready")
