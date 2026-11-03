@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 import subprocess
 import tempfile
 import unittest
@@ -12,8 +11,7 @@ EXPECTED_URL = "git@github.com:martemme/HomeAssistantAddons.git"
 
 class EnsureGithubRemoteTests(unittest.TestCase):
     def setUp(self):
-        scratch = os.environ.get("TMPDIR", "/home/martin/.hermes/cache/scratch")
-        self.tempdir = tempfile.TemporaryDirectory(dir=scratch)
+        self.tempdir = tempfile.TemporaryDirectory(dir=REPO_ROOT)
         self.repo = Path(self.tempdir.name) / "repo"
         self.repo.mkdir()
         subprocess.run(["git", "init", "--quiet", str(self.repo)], check=True)
