@@ -17,6 +17,8 @@ If you want to add the repository manually, please follow the procedure highligh
 
 _Forwards Home Assistant OS, Core, and add-on container journal logs to VictoriaLogs._
 
+The source and validation commands are documented in [vector/README.md](./vector/README.md). The add-on configuration enables the Supervisor's read-only journald mount and defaults to `http://10.30.20.20:9428`; it contains no VictoriaLogs credentials. A LogsQL read-back recorded in [ADO #300](https://dev.azure.com/martemme/Homelab/_workitems/edit/300) found a live HAOS event (`host=homeassistant`) on 2026-11-03, so log forwarding from the installed add-on was observed. That does not prove that the installed version matches the current ADO `main` commit or that the GitHub mirror is current: main run #52 failed, and the mirror repair in [PR #28](https://dev.azure.com/martemme/Homelab/_git/hacs-addon/pullrequest/28) is still under review. Check [Task #301](https://dev.azure.com/martemme/Homelab/_workitems/edit/301) and the post-merge mirror read-back before treating the current source revision as deployed.
+
 ### [Caddy 2 Dynamic Ingress](./caddy)
 
 ![Supports amd64 Architecture][amd64-shield]
