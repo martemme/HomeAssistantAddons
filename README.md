@@ -17,6 +17,8 @@ If you want to add the repository manually, please follow the procedure highligh
 
 _Forwards Home Assistant OS, Core, and add-on container journal logs to VictoriaLogs._
 
+The source and validation commands are documented in [vector/README.md](./vector/README.md). The add-on configuration enables the Supervisor's read-only journald mount and defaults to `http://10.30.20.20:9428`; it contains no VictoriaLogs credentials. The add-on being present in this repository does not prove that the GitHub mirror is current or that it has been installed and activated on HAOS. Check the latest `hacs-addon-github-mirror` run and the live-verification task [#301](https://dev.azure.com/martemme/Homelab/_workitems/edit/301) before treating it as operational.
+
 ### [Caddy 2 Dynamic Ingress](./caddy)
 
 ![Supports amd64 Architecture][amd64-shield]
