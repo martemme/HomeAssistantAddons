@@ -1,0 +1,7 @@
+configuration:
+  victorialogs_url:
+    name: URL Base VictoriaLogs
+    description: URL base HTTP o HTTPS dell'istanza VictoriaLogs per l'ingestione (es. http://10.30.20.20:9428). L'add-on appende automaticamente /insert/jsonline.
+  host_label:
+    name: Label Host dello Stream
+    description: Valore assegnato al campo di stream host in VictoriaLogs per indicizzazione e query (default homeassistant).
