@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5
+
+- Add optional per-route Basic Auth with Argon2id password hashing and private custom upstream headers.
+- Add a versioned ADO webhook example without coupling ADO-specific settings to the generic route generator.
+
 ## 0.1.4
 
 - Send an IP-only `X-Forwarded-For` value to upstreams, avoiding `IP:port` values that Home Assistant may reject with HTTP 400.

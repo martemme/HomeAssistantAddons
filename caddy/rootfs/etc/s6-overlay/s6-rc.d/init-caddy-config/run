@@ -20,7 +20,9 @@ unset CF_API_TOKEN
 
 python3 /usr/local/bin/generate_caddyfile.py \
     --options /data/options.json \
-    --output /data/Caddyfile
+    --output /data/Caddyfile \
+    --secrets-output /data/caddy-secrets.env \
+    --environment-directory /var/run/s6/container_environment
 
 if ! CF_API_TOKEN="${token}" /usr/bin/caddy validate --config /data/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
     bashio::log.error "Caddy configuration or Cloudflare token is invalid; review options, routes, drop-ins, and token scope."

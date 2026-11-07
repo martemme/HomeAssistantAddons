@@ -16,6 +16,8 @@ This add-on provides a **Caddy 2 reverse proxy** with automatic wildcard TLS via
 
 - **Automated Wildcard TLS**: Obtains and renews wildcard certificates using the Cloudflare DNS-01 challenge.
 - **Dynamic Routing**: Route clean subdomains (e.g., `home.example.com`, `vault.example.com`) directly to internal Docker containers, add-ons, or LAN hosts.
+- **Per-route Basic Auth**: Optionally protect a configured route with a username and password; the add-on hashes passwords with Caddy Argon2id.
+- **Private upstream headers**: Optionally attach a fixed secret header to requests sent to a route's upstream without putting its value in the generated Caddyfile.
 - **Zero Config Tampering**: Leaves Home Assistant core container configuration untouched; communicates via standard internal proxying.
 - **Drop-in Extensibility**: Add custom reverse proxies, security headers, or authentication layers in `/share/caddy/conf.d/`.
 - **Hot-Reload & Safety**: Inotify watcher automatically validates syntax before applying changes; faulty configs are rejected while keeping the existing service alive.
@@ -34,24 +36,32 @@ email: admin@example.com
 routes:
   - subdomain: home
     target: homeassistant:8123
-  - subdomain: vault
+  - subdomain: private
     target: vaultwarden:80
-  - subdomain: storage
-    target: minio:9001
-  - subdomain: media
-    target: jellyfin:8096
+    basic_auth_username: vault-user
+    basic_auth_password: <choose-a-strong-password>
+    custom_header_name: X-Upstream-Token
+    custom_header_value: <optional-fixed-token>
 ```
+
+The password and custom-header value above are placeholders; store real credentials in Home Assistant secrets where supported, not in documentation or shared files.
 
 ### Parameters
 
 | Variable | Default | Description |
 |---|---|---|
 | `domain` | `example.com` | Base apex domain managed in your Cloudflare DNS account. |
-| `cloudflare_api_token` | *(Required)* | Cloudflare API Token with `Zone:Read` and `DNS:Edit` permissions. Supports `!secret` references. |
+| `cloudflare_api_token` | *(Required)* | Cloudflare API Token with `Zone:Read` and `DNS:Edit` permissions. Supports Supervisor `!secret` references. |
 | `email` | `null` | *(Optional)* ACME email address for certificate expiration and renewal notifications. |
 | `routes` | `[{"subdomain": "home", "target": "homeassistant:8123"}]` | List of routes mapping subdomains to upstream target services. |
 | `routes[].subdomain` | `home` | DNS label under `domain` (e.g., `home` becomes `home.example.com`). Multi-level labels (e.g. `auth.app`) are supported. |
 | `routes[].target` | `homeassistant:8123` | Upstream target address: `host:port`, `[IPv6]:port`, `http://host:port`, or `https://host:port`. |
+| `routes[].basic_auth_username` | *(unset)* | Optional username. Set it together with `basic_auth_password`; authentication protects the entire configured hostname route. |
+| `routes[].basic_auth_password` | *(unset)* | Optional password; hashed using Caddy Argon2id. Never written in plaintext to the generated Caddyfile. |
+| `routes[].custom_header_name` | *(unset)* | Optional fixed upstream header name. Set it together with `custom_header_value`; `Authorization` is reserved and rejected. |
+| `routes[].custom_header_value` | *(unset)* | Optional fixed URL-safe secret value, stored in a mode-0600 runtime secret file and not in the Caddyfile. |
+
+`basic_auth_username` and `basic_auth_password` must be configured together. The same applies to the custom header name and value. See [DOCS.md](DOCS.md) for a YAML `!secret` example and the versioned ADO webhook example.
 
 ---
 
@@ -143,9 +153,10 @@ caddy/
 
 ## 🛡 Security
 
-- **Restricted Token Scope**: The Cloudflare API token is injected into an isolated, temporary S6 environment file (`0600`) and cleared from child environment variables. It is never printed in logs or written into the Caddyfile.
+- **Restricted Token Scope**: The Cloudflare API token is stored in a private S6 runtime environment file (`0600`) and is not written into the Caddyfile or logs. The password-hashing subprocess receives a sanitized environment without `CF_API_TOKEN`.
 - **Strict Input Validation**: Subdomain labels and upstream targets are validated against strict regex rules before writing the Caddyfile, preventing syntax injection attacks.
 - **Least Privilege**: The container operates without host networking (`host_network: false`), without privileged Docker mode, and mounts `/share` as read-only.
+- **Backup-sensitive data**: `/data/options.json` contains resolved add-on options, `/data/caddy-secrets.env` contains custom upstream header values, and `/data/Caddyfile` contains Basic Auth Argon2id hashes. Protect backups of all three. Passwords and custom-header values are not written in plaintext to the generated Caddyfile.
 
 ---
 

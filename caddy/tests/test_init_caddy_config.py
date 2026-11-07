@@ -8,6 +8,25 @@ INIT_SCRIPT = CADDY_DIR / "rootfs/etc/s6-overlay/s6-rc.d/init-caddy-config/run"
 
 
 class InitCaddyConfigTests(unittest.TestCase):
+    def test_custom_header_secrets_are_installed_for_caddy_and_watcher_environment(self):
+        script = INIT_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("--secrets-output /data/caddy-secrets.env", script)
+        self.assertIn("--environment-directory /var/run/s6/container_environment", script)
+        self.assertIn("/var/run/s6/container_environment/CF_API_TOKEN", script)
+
+        for service in ("caddy", "watch-config"):
+            entrypoint = (
+                CADDY_DIR / "rootfs/etc/s6-overlay/s6-rc.d" / service / "run"
+            ).read_text(encoding="utf-8")
+            self.assertIn("#!/command/with-contenv bashio", entrypoint)
+
+    def test_caddy_service_uses_config_generated_by_init_service(self):
+        run_script = (CADDY_DIR / "run.sh").read_text(encoding="utf-8")
+
+        self.assertNotIn("generate_caddyfile.py", run_script)
+        self.assertIn("/usr/bin/caddy run --config /data/Caddyfile --adapter caddyfile", run_script)
+
     def test_cloudflare_token_is_scoped_to_caddy_validation(self):
         script = INIT_SCRIPT.read_text(encoding="utf-8")
         token_read = script.index(

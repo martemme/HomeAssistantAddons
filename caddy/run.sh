@@ -10,10 +10,7 @@ fi
 mkdir -p /data/caddy /data/config
 chmod 700 /data/caddy /data/config
 
-python3 /usr/local/bin/generate_caddyfile.py \
-    --options /data/options.json \
-    --output /data/Caddyfile
-
+# init-caddy-config validates and writes /data/Caddyfile before this service starts.
 export XDG_DATA_HOME=/data
 export XDG_CONFIG_HOME=/data/config
 bashio::log.info "Starting Caddy with persistent certificate storage."

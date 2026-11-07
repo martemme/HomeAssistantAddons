@@ -18,3 +18,15 @@ configuration:
       target:
         name: Upstream target
         description: Host and port, for example homeassistant:8123.
+      basic_auth_username:
+        name: Basic Auth username
+        description: Optional username; set together with the password to protect this route.
+      basic_auth_password:
+        name: Basic Auth password
+        description: Optional password; Caddy stores only an Argon2id hash in its generated Caddyfile.
+      custom_header_name:
+        name: Upstream header name
+        description: Optional fixed header to add to requests sent upstream.
+      custom_header_value:
+        name: Upstream header value
+        description: Optional secret value stored outside the generated Caddyfile.
