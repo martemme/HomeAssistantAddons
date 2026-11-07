@@ -15,16 +15,18 @@ If you want to add the repository manually, please follow the procedure highligh
 ![Supports amd64 Architecture][amd64-shield]
 ![Supports aarch64 Architecture][aarch64-shield]
 
-_Forwards Home Assistant OS, Core, and add-on container journal logs to VictoriaLogs._
+_Forwards Home Assistant OS, Core, and add-on container journal logs in real-time to VictoriaLogs via Vector 0.44.0._
 
-The source and validation commands are documented in [vector/README.md](./vector/README.md). The add-on configuration enables the Supervisor's read-only journald mount and defaults to `http://10.30.20.20:9428`; it contains no VictoriaLogs credentials. A LogsQL read-back recorded in [ADO #300](https://dev.azure.com/martemme/Homelab/_workitems/edit/300) found a live HAOS event (`host=homeassistant`) on 2026-11-03, so forwarding from the installed add-on was observed. Mirror repair [PR #28](https://dev.azure.com/martemme/Homelab/_git/hacs-addon/pullrequest/28) was merged as `24727b59ffd81808ec1888a46ac17016d4ec2449`; main runs #61 and #62 succeeded. After documentation [PR #34](https://dev.azure.com/martemme/Homelab/_git/hacs-addon/pullrequest/34) merged as `242f76efecf66482a1311d0a0c245d51efd1912b`, main run #64 succeeded and ADO/GitHub `main` both read back at that commit. This verifies mirror parity at that read-back, not the installed add-on revision: the LogsQL event did not identify the running commit. This README update will advance `main`; use the latest successful mirror run and current remote refs for present parity rather than treating the preceding SHA as the post-update tip.
+Detailed documentation, schema, and configuration options are available in [vector/README.md](./vector/README.md) and [vector/DOCS.md](./vector/DOCS.md).
 
 ### [Caddy 2 Dynamic Ingress](./caddy)
 
 ![Supports amd64 Architecture][amd64-shield]
 ![Supports aarch64 Architecture][aarch64-shield]
 
-_Route configured subdomains to internal services and automatically obtain and renew wildcard TLS certificates via Cloudflare DNS-01._
+_Route configured subdomains to internal services and automatically obtain and renew wildcard TLS certificates via Cloudflare DNS-01. Supports per-route Basic Auth (Argon2id) and private upstream secret headers._
+
+Detailed documentation, configuration options, and integration examples are available in [caddy/README.md](./caddy/README.md) and [caddy/DOCS.md](./caddy/DOCS.md).
 
 ### [MinIO](./minio)
 
