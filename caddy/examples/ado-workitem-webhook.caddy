@@ -1,0 +1,9 @@
+# Optional example drop-in for Azure DevOps Web Hooks.
+# Copy to /share/caddy/conf.d/ado-workitem-webhook.caddy after configuring
+# the generic `ai` route in the add-on options. The route-level Basic Auth
+# and fixed X-Gitlab-Token header remain generic add-on options.
+@ado_workitem_webhook {
+	host ai.mt-home.uk
+	path /webhook /webhook/
+}
+rewrite @ado_workitem_webhook /webhooks/ado-workitems

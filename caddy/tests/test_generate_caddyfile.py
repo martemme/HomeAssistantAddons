@@ -1,17 +1,20 @@
 import json
 import contextlib
 import io
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 CADDY_DIR = Path(__file__).resolve().parents[1]
 REPO_DIR = CADDY_DIR.parent
 sys.path.insert(0, str(CADDY_DIR))
 
+import generate_caddyfile as generator_module  # noqa: E402
 from generate_caddyfile import generate_caddyfile, main  # noqa: E402
 
 
@@ -84,6 +87,148 @@ class GenerateCaddyfileTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             generate_caddyfile(options)
 
+    def test_config_schema_declares_optional_generic_route_auth_fields(self):
+        config = json.loads((CADDY_DIR / "config.json").read_text(encoding="utf-8"))
+        route_schema = config["schema"]["routes"][0]
+
+        self.assertEqual(route_schema["basic_auth_username"], "str?")
+        self.assertEqual(route_schema["basic_auth_password"], "password?")
+        self.assertEqual(route_schema["custom_header_name"], "str?")
+        self.assertEqual(route_schema["custom_header_value"], "password?")
+
+    def test_cli_exports_custom_header_secret_to_s6_environment_private_file(self):
+        options = self.valid_options()
+        token = "test-header-token_123"
+        options["routes"] = [{
+            "subdomain": "ai",
+            "target": "router:8765",
+            "custom_header_name": "X-Gitlab-Token",
+            "custom_header_value": token,
+        }]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            options_path = root / "options.json"
+            output_path = root / "Caddyfile"
+            secrets_path = root / "caddy-secrets.env"
+            environment_dir = root / "container_environment"
+            options_path.write_text(json.dumps(options), encoding="utf-8")
+
+            status = main([
+                "--options", str(options_path),
+                "--output", str(output_path),
+                "--secrets-output", str(secrets_path),
+                "--environment-directory", str(environment_dir),
+            ])
+
+            runtime_secret = environment_dir / "CADDY_CUSTOM_HEADER_0"
+            self.assertEqual(status, 0)
+            self.assertEqual(secrets_path.read_text(encoding="utf-8"), f"CADDY_CUSTOM_HEADER_0={token}\n")
+            self.assertEqual(runtime_secret.read_text(encoding="utf-8"), token)
+            self.assertEqual(secrets_path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(runtime_secret.stat().st_mode & 0o777, 0o600)
+            self.assertNotIn(token, output_path.read_text(encoding="utf-8"))
+
+    def test_authentication_hash_and_custom_header_use_safe_process_boundaries(self):
+        options = self.valid_options()
+        password = "not-a-real-basic-auth-password"
+        header_token = "test-header-token_123"
+        options["routes"] = [{
+            "subdomain": "ai",
+            "target": "router:8765",
+            "basic_auth_username": "ado-hook",
+            "basic_auth_password": password,
+            "custom_header_name": "X-Gitlab-Token",
+            "custom_header_value": header_token,
+        }]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fake_caddy = Path(temp_dir) / "caddy"
+            capture_path = Path(temp_dir) / "hash-process.json"
+            fake_caddy.write_text(
+                "#!/usr/bin/env python3\n"
+                "import json, os, sys\n"
+                "with open(os.environ['CADDY_TEST_CAPTURE'], 'w', encoding='utf-8') as output:\n"
+                "    json.dump({'argv': sys.argv[1:], 'stdin': sys.stdin.read(), "
+                "'cf_token': os.environ.get('CF_API_TOKEN')}, output)\n"
+                "print('$argon2id$v=19$m=65536,t=3,p=2$YWJj$ZGVm')\n",
+                encoding="utf-8",
+            )
+            fake_caddy.chmod(0o755)
+            with mock.patch.object(generator_module, "CADDY_BINARY", str(fake_caddy), create=True):
+                with mock.patch.dict(os.environ, {
+                    "CF_API_TOKEN": "synthetic-cloudflare-token",
+                    "CADDY_TEST_CAPTURE": str(capture_path),
+                }):
+                    output = generate_caddyfile(options)
+
+            hash_process = json.loads(capture_path.read_text(encoding="utf-8"))
+
+        self.assertIn("basic_auth @route_0", output)
+        self.assertIn("$argon2id$v=19$m=65536,t=3,p=2$YWJj$ZGVm", output)
+        self.assertIn("header_up X-Gitlab-Token {env.CADDY_CUSTOM_HEADER_0}", output)
+        self.assertIn("header_up -Authorization", output)
+        self.assertNotIn(password, output)
+        self.assertNotIn(header_token, output)
+        self.assertEqual(hash_process["argv"], ["hash-password", "--algorithm", "argon2id"])
+        self.assertEqual(hash_process["stdin"], password + "\n")
+        self.assertIsNone(hash_process["cf_token"])
+
+    def test_rejects_incomplete_basic_auth_pair(self):
+        options = self.valid_options()
+        options["routes"][0]["basic_auth_username"] = "ado-hook"
+
+        with self.assertRaises(ValueError):
+            generate_caddyfile(options)
+
+    def test_rejects_incomplete_custom_header_pair(self):
+        options = self.valid_options()
+        options["routes"][0]["custom_header_name"] = "X-Webhook-Token"
+
+        with self.assertRaises(ValueError):
+            generate_caddyfile(options)
+
+    def test_rejects_authorization_and_caddyfile_injection_custom_headers(self):
+        for header_name, header_value in (
+            ("Authorization", "safe_token"),
+            ("authorization", "safe_token"),
+            ("X-Test\nrespond", "safe_token"),
+            ("X-Test", "value with spaces"),
+            ("X-Test", "value\nrespond 200"),
+            ("X-Test", "{env.CF_API_TOKEN}"),
+        ):
+            with self.subTest(header_name=header_name, header_value=header_value):
+                options = self.valid_options()
+                options["routes"][0].update({
+                    "custom_header_name": header_name,
+                    "custom_header_value": header_value,
+                })
+                with self.assertRaises(ValueError):
+                    generate_caddyfile(options)
+
+    def test_password_hash_failure_does_not_expose_process_errors(self):
+        options = self.valid_options()
+        options["routes"][0].update({
+            "basic_auth_username": "webhook",
+            "basic_auth_password": "synthetic-password-sentinel",
+        })
+        error_sentinel = "hash-error-password-sentinel"
+        failed = subprocess.CompletedProcess(
+            args=["caddy", "hash-password"],
+            returncode=1,
+            stdout="",
+            stderr=error_sentinel,
+        )
+
+        with mock.patch.object(generator_module.subprocess, "run", return_value=failed) as run:
+            with self.assertRaises(ValueError) as caught:
+                generate_caddyfile(options)
+
+        self.assertNotIn("hash-error-password-sentinel", str(caught.exception))
+        self.assertNotIn("synthetic-password-sentinel", str(caught.exception))
+        self.assertNotIn("synthetic-password-sentinel", repr(run.call_args.args[0]))
+        self.assertNotIn("synthetic-password-sentinel", str(run.call_args.kwargs.get("env")))
+        self.assertEqual(run.call_args.kwargs.get("input"), "synthetic-password-sentinel\n")
+
     def test_rejects_duplicate_route_host(self):
         options = self.valid_options()
         options["routes"].append({"subdomain": "ha", "target": "other:80"})
@@ -150,11 +295,14 @@ class GenerateCaddyfileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             options_path = Path(temp_dir) / "options.json"
             output_path = Path(temp_dir) / "Caddyfile"
+            secrets_path = Path(temp_dir) / "caddy-secrets.env"
             options_path.write_text(json.dumps(self.valid_options()), encoding="utf-8")
 
             result = subprocess.run(
                 [sys.executable, str(CADDY_DIR / "generate_caddyfile.py"),
-                 "--options", str(options_path), "--output", str(output_path)],
+                 "--options", str(options_path), "--output", str(output_path),
+                 "--secrets-output", str(secrets_path),
+                 "--environment-directory", str(Path(temp_dir) / "container_environment")],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -175,7 +323,12 @@ class GenerateCaddyfileTests(unittest.TestCase):
 
             stderr = io.StringIO()
             with contextlib.redirect_stderr(stderr):
-                status = main(["--options", str(options_path), "--output", str(output_path)])
+                status = main([
+                    "--options", str(options_path),
+                    "--output", str(output_path),
+                    "--secrets-output", str(Path(temp_dir) / "caddy-secrets.env"),
+                    "--environment-directory", str(Path(temp_dir) / "container_environment"),
+                ])
 
             self.assertNotEqual(status, 0)
             self.assertFalse(output_path.exists())
