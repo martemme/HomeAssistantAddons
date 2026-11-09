@@ -241,7 +241,7 @@ def prepare(payload: Any, client: Any) -> dict[str, Any] | None:
     parent_ids = [entry["id"] for entry in parents]
     initial_message = " ".join([f"AB#{envelope['work_item_id']}", *(f"AB#{item_id}" for item_id in parent_ids)])
 
-    return {
+    prepared = {
         "run_mode": "DRY_RUN",
         "ado_event_type": event_type,
         "project_id": project_id,
@@ -260,6 +260,15 @@ def prepare(payload: Any, client: Any) -> dict[str, Any] | None:
         "decision": "candidate_for_read_only_assessment",
         "side_effects_allowed": False,
     }
+    context_fields = (
+        "run_mode", "ado_event_type", "project_id", "work_item_id", "initial_message",
+        "current_work_item", "parents", "children", "dependencies", "trigger_comment",
+        "knowledge_base", "decision", "side_effects_allowed",
+    )
+    prepared["agent_context"] = json.dumps(
+        {key: prepared[key] for key in context_fields}, ensure_ascii=False, indent=2,
+    )
+    return prepared
 
 
 class HomelabAdoClient:
