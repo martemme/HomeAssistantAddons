@@ -163,7 +163,7 @@ class GenerateCaddyfileTests(unittest.TestCase):
 
             hash_process = json.loads(capture_path.read_text(encoding="utf-8"))
 
-        self.assertIn("basic_auth @route_0", output)
+        self.assertIn("basic_auth @route_0 argon2id {", output)
         self.assertIn("$argon2id$v=19$m=65536,t=3,p=2$YWJj$ZGVm", output)
         self.assertIn("header_up X-Gitlab-Token {env.CADDY_CUSTOM_HEADER_0}", output)
         self.assertIn("header_up -Authorization", output)
