@@ -117,6 +117,19 @@ class PrepareAdoWebhookTests(unittest.TestCase):
         self.assertTrue(prepared["initial_message"].startswith("AB#42 AB#17"))
         self.assertEqual(prepared["run_mode"], "DRY_RUN")
 
+    def test_agent_context_serializes_the_verified_dry_run_data(self):
+        prepared = prepare_module.prepare(ado_payload(), FakeAdoClient())
+
+        context = json.loads(prepared["agent_context"])
+
+        self.assertEqual(context["run_mode"], "DRY_RUN")
+        self.assertIs(context["side_effects_allowed"], False)
+        self.assertEqual(context["ado_event_type"], "workitem.updated")
+        self.assertEqual(context["current_work_item"]["title"], "Live title")
+        self.assertEqual(context["parents"][0]["id"], 17)
+        self.assertEqual(context["knowledge_base"][0]["path"], "/Homelab/Governance/Procedure Operative")
+        self.assertTrue(context["initial_message"].startswith("AB#42 AB#17"))
+
     def test_malformed_hierarchy_relation_fails_closed(self):
         client = FakeAdoClient()
         client.item["relations"][0]["url"] = "https://dev.azure.com/org/project/_apis/wit/workItems/not-an-id"
