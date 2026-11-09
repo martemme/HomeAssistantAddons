@@ -39,7 +39,7 @@ The first successful ACME request creates temporary `_acme-challenge` TXT record
 
 ### Optional per-route Basic Auth and upstream header
 
-Set `basic_auth_username` and `basic_auth_password` together to require HTTP Basic Auth on that route's hostname. The password is passed to the Caddy hash command through stdin and the generated Caddyfile stores only the Argon2id hash. Route-level authentication covers the entire configured hostname, not a single path. If other paths on the same host must remain public, use a carefully reviewed path-scoped Caddyfile drop-in instead.
+Set `basic_auth_username` and `basic_auth_password` together to require HTTP Basic Auth on that route's hostname. The password is passed to the Caddy hash command through stdin; the generated `basic_auth` directive explicitly selects Argon2id to match the stored hash. Route-level authentication covers the entire configured hostname, not a single path. If other paths on the same host must remain public, use a carefully reviewed path-scoped Caddyfile drop-in instead.
 
 Set `custom_header_name` and `custom_header_value` together to attach one fixed header to upstream requests. This is useful when an upstream webhook adapter expects a token header. The value is restricted to URL-safe characters, stored in `/data/caddy-secrets.env` with mode `0600`, and exported only to the add-on runtime; it is not embedded in `/data/Caddyfile`. `Authorization` is reserved: the add-on strips inbound `Authorization` before proxying, so the upstream does not receive ADO's Basic Auth credentials.
 

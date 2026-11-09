@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+
+- Fix Basic Auth by explicitly selecting Argon2id in Caddy's `basic_auth` directive, matching the generated password hash.
+
 ## 0.1.5
 
 - Add optional per-route Basic Auth with Argon2id password hashing and private custom upstream headers.

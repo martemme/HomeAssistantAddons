@@ -176,7 +176,7 @@ def _compile_configuration(options):
         if username is not None:
             hashed = _hash_password(password)
             lines.extend((
-                f"\tbasic_auth {matcher} {{",
+                f"\tbasic_auth {matcher} argon2id {{",
                 f"\t\t{username} {hashed}",
                 "\t}",
             ))
